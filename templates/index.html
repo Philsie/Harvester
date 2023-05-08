@@ -1,0 +1,17 @@
+<link rel="stylesheet" href="./stylesheets/index.css">
+<html>
+  <head>
+    <title>Video Streaming Demonstration</title>
+  </head>
+  <body>
+    <h1>Video Streaming Demonstration</h1>
+      <form action="/cam_res" method = "POST">
+        <p><input type = "text" name = "resolution" placeholder="{{(cam_stats['width']+'x'+cam_stats['height'])}}"/> Resolution (Width x Height) </p>
+        <p><input type = "number" name = "exposure" placeholder="{{cam_stats['exposure']}}" /> Exposure</p>
+        <p><input type = "submit" value = "Submit" /></p>  
+      </form>
+      ------------------------------------<br>
+      <img src="{{url_for('video_feed')}}"><br>
+      {{fps}}
+  </body>
+</html>
