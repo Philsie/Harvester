@@ -1,9 +1,10 @@
-from flask import Flask, render_template, Response, send_file, request
-from GeniCam import GeniCam
+import argparse
 import os
 import random as rd
-import argparse
 
+from flask import Flask, Response, render_template, request, send_file, flash
+
+from GeniCam import GenICam
 
 #########
 #https://github.com/langenhagen/experiments-and-tutorials/blob/master/Python/genicam-harvesters-hello/main.py
@@ -14,39 +15,50 @@ import argparse
 #Treading --> function
 
 app = Flask(__name__)
-
 global cam_stats
 cam_stats = {}
 
 @app.before_first_request
 def before_first_request():
+    print("Start: before_first_request")
     global cam
-    global gen
-    cam = GeniCam().ia
-    cam.start_acquisition()
-    gen = GeniCam.Frame_getter(cam)
+    cam = GenICam()
+    print("Cam: ", cam)
+    cam.ia.start_acquisition()
+    print("END: before_first_request")
 
 @app.route('/')
 def index():
-    return render_template('index.html',cam_stats=cam_stats)
+    print("hi therte")
+    print(cam.getSize())
+    return render_template(
+        "index.html", gain=cam.gain, res=cam.getSize(), expo=cam.exposure
+    )
 
 @app.route("/cam_res",methods = ['POST'])
 def cam_res(): 
     if request.method == "POST":
         data = request.form
         print(data)
-        cam.stop_acquisition()
-        config_device(cam,data)
-        cam.remote_device.node_map.Exposure.value(10000)
-        input()
-        cam.start_acquisition()
-    return render_template('index.html',cam_stats=cam_stats)
-
+        cam.ia.stop_acquisition()
+        config_device(cam.ia, data)
+        keys = data.keys()
+        print(keys)
+        if "exposure" in keys and data["exposure"] != "":
+            cam.exposure = int(data["exposure"])
+        if "gain" in keys and data["gain"] != "":
+            cam.gain = float(data["gain"])
+        cam.ia.start_acquisition()
+    return render_template(
+        "index.html", gain=cam.gain, res=cam.getSize(), expo=cam.exposure
+    )
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen.run(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    print("/video_feed")
+    # cam.Trigger()
+    print("Trigger Done")
+    return Response(cam.Grab(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
     """
 
@@ -56,8 +68,9 @@ def video_feed():
 
 @app.route('/fps')
 def fps():
-    return Response(gen.get_fps(),
-                    mimetype='text')
+    return Response("666", mimetype="text")
+
+
 #%%
 
 def config_device(dev,config):
@@ -71,6 +84,9 @@ def config_device(dev,config):
         dev.remote_device.node_map.Height.value = int(config["height"])
         cam_stats["width"], cam_stats["height"] = config["width"],config["height"]
 
+
+print(__name__)
 #%%
 if __name__ == '__main__':
-    app.run(debug=False)#,host='0.0.0.0')
+    print("Main")
+    app.run(host="0.0.0.0", port=5050, debug=True)

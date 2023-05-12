@@ -1,4 +1,4 @@
-from Harvester.GeniCam import GeniCam as HfF
+from GeniCam import GenICam as HfF
 
 hff = HfF()
 
@@ -15,11 +15,11 @@ print("=====>", hff.height)
 print("=====>", hff.exposure)
 hff.exposure = 10000
 print("=====>", hff.exposure)
+print("=====>", hff.gain)
+hff.gain = 2.0
+print("=====>", hff.gain)
 print("=====> done")
-fg = hff.Frame_getter(hff.ia)
-print(fg.get_frame())
-print(fg.get_fps())
-
+print("=====>", hff.get_frame())
 
 
 """

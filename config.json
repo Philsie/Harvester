@@ -1,7 +1,8 @@
 {
-    "width":600,
-    "height":400,
-    "exposure": 15000,
+    "width":1280,
+    "height":1024,
+    "exposure": 5000,
+    "gain": 2.0,
     "ctis": ["/home/philipp/src/Harvester/ximea.gentl.cti"]
 
 

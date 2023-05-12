@@ -1,35 +1,47 @@
-from harvesters.core import Harvester
-import numpy as np
-from PIL import Image
-import os
 import io
-from datetime import datetime as dt
 import json
-from threading import Thread
+import os
+from datetime import datetime as dt
 
-with open('config.json') as config_file:
-    config = json.load(config_file)
+import numpy as np
+from harvesters.core import Harvester
+from PIL import Image
 
-class GeniCam():
+
+class GenICam:
     def __init__(self) -> None:
+        print("Init: GeniCam")
+
+        with open("config.json") as config_file:
+            self.config = json.load(config_file)
+
+        print(self.config)
+
         self.cam = None
         self.ia = None
         self.Harvester = Harvester()
-        for path in config["ctis"]:
+        for path in self.config["ctis"]:
             self.Harvester.add_file(path)
             self.Harvester.update()
         if len(self.Harvester.device_info_list)>0:
             self.cam = self.Harvester.device_info_list[0]
             self.ia = self.Harvester.create_image_acquirer(self.Harvester.device_info_list.index(self.cam))
-
-        if self.ia:
-            self.width=config["width"]
-            self.height=config["height"]
-            self.ex=config["exposure"]
-            #self.ia.remote_device.node_map.TriggerMode.value = "On"
-            #self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
-            #self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
-            
+        print("Tree")
+        if True:
+            print(self.ia.remote_device.node_map.PixelFormat.symbolics)
+            self.ia.remote_device.node_map.PixelFormat.value = (
+                "BGR8"  # Resets width and size
+            )
+            print("!!!!!")
+            self.width = self.config["width"]
+            self.height = self.config["height"]
+            self.exposure = self.config["exposure"]
+            self.gain = self.config["gain"]
+            # self.ia.remote_device.node_map.TriggerMode.value = "On"
+            # self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
+            # self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
+        print("////", self.width)
+        print("Init Done: GenICam")
         
     @property
     def width(self):
@@ -61,38 +73,41 @@ class GeniCam():
             self.ia.remote_device.node_map.ExposureTime.value = e
         else: print(f"Invalid input for width.setter: {e}, {type(e)}")
 
-    class Frame_getter():
-        def __init__(self,ia):
-            #Thread.__init__(self)
-            self.ia = ia
-            self.running = True
-            self.frametime = 60
-            self.Frame = ""
-            #self.thread = Thread(target=self.run)
-            #self.thread.run()
-            #self.run()
+    @property
+    def gain(self):
+        return self.ia.remote_device.node_map.Gain.value
 
-        def get_fps(self):
-            fps_bytes = str(int(1/self.frametime))+" FPS"
-            return fps_bytes
+    @gain.setter
+    def gain(self, g):
+        if g >= 0 and isinstance(g, float):
+            self.ia.remote_device.node_map.Gain.value = g
+        else:
+            print(f"Invalid input for width.setter: {g}, {type(g)}")
 
-        def get_frame(self):
-            self.run()
+    def Trigger(self):
+        print("Trigger")
+        self.ia.remote_device.node_map.TriggerSoftware.execute()
+
+    def getSize(self):
+        print(self.width, self.height)
+        return (self.width, self.height)
+
+    def Grab(self):
+        print("Grab")
+        time = dt.now()
+        with self.ia.fetch_buffer() as buffer:
+            component = buffer.payload.components[0]
+            print(self.getSize())
+            image_data = component.data.reshape(self.height, self.width, 3)[:, :, ::-1]
+            img = Image.fromarray(image_data)
+            img = img.crop()
+            img_byte_arr = io.BytesIO()
+
+            img.save(img_byte_arr, format="JPEG")
+            img_byte_arr = img_byte_arr.getvalue()
+            fps = dt.now().timestamp() - time.timestamp()
+            self.Frame = (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" + img_byte_arr + b"\r\n"
+            )
             return self.Frame
-                
-        def run(self):
-            time = dt.now()
-            #self.ia.remote_device.node_map.TriggerSoftware.execute()
-            with self.ia.fetch_buffer() as buffer:
-                component = buffer.payload.components[0]
-                image_data = component.data.reshape(component.height,component.width) 
-                img = Image.fromarray(image_data)
-                img = img.crop()
-                img_byte_arr = io.BytesIO()
-                
-                img.save(img_byte_arr, format='PNG')
-                img_byte_arr = img_byte_arr.getvalue()
-                fps = (dt.now().timestamp()-time.timestamp())
-                self.frametime = fps
-                yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + img_byte_arr + b'\r\n')

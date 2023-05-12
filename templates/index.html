@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="stylesheets/index.css">
+
 <html>
   <head>
     <title>Video Streaming Demonstration</title>
@@ -6,35 +6,14 @@
   <body>
     <h1>Video Streaming Demonstration</h1>
 
+      <form action="/cam_res" method = "POST">	
+     	<p><input type = "number" name = "exposure" placeholder="{{expo}}" /> Exposure</p>
+     	<p><input type = "number" name = "gain" placeholder="{{gain}}" />Gain</p>
+	<p><input type = "submit" value = "Submit" /></p>  
+      </form>
+      
       ------------------------------------<br>
-      <p id="fps"> FPS </p>
-      <img id="cam" src="https://devblogs.microsoft.com/visualstudio/wp-content/uploads/sites/4/2020/06/devblog-debug.png"><br>
-      <p id="debug">DEBUG</p>
-    <script>
-      var FPS = document.getElementById("fps");
-      setInterval(() => {
-          fetch("{{ url_for('fps') }}")
-          .then(response => {
-                  response.text().then(t => {FPS.innerHTML = t})
-              });
-          fetch("{{ url_for('video_feed') }}")
-          .then(response => {
-                  response.text().then(s => {CAM.setAttribute(src,s),DEBUG.innerHTML="tried"})
-              });
-          }, 1);  
-    </script>
-    <script>
-      var CAM = document.getElementById("cam");
-      var DEBUG = document.getElementById("debug");
-      DEBUG.innerHTML = "*"
-      setInterval(() => {
-          fetch("{{url_for('video_feed')}}")
-          .then(response => {
-                  response.text().then(s => {CAM.src=s,DEBUG.innerHTML=s})
-              });
-          }, 1); 
-
-    </script>
-
+      <img id="cam" src="{{url_for('video_feed')}}" width="{{res[0]}}" height="{{res[1]}}"><br>
+      <a href="{{ url_for('index') }}"><button>REFRESH</button></a>
   </body>
 </html
