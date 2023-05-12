@@ -2,9 +2,9 @@ import argparse
 import os
 import random as rd
 
-from flask import Flask, Response, render_template, request, send_file, flash
+from flask import Flask, Response, flash, render_template, request, send_file
 
-from GeniCam import GenICam
+from GenICam import GenICam
 
 #########
 #https://github.com/langenhagen/experiments-and-tutorials/blob/master/Python/genicam-harvesters-hello/main.py
@@ -24,15 +24,15 @@ def before_first_request():
     global cam
     cam = GenICam()
     print("Cam: ", cam)
-    cam.ia.start_acquisition()
+    cam.ia.start_image_acquisition()
     print("END: before_first_request")
 
 @app.route('/')
 def index():
     print("hi therte")
-    print(cam.getSize())
+    print(cam.get_size())
     return render_template(
-        "index.html", gain=cam.gain, res=cam.getSize(), expo=cam.exposure
+        "index.html", gain=cam.gain, res=cam.get_size(), expo=cam.exposure
     )
 
 @app.route("/cam_res",methods = ['POST'])
@@ -50,21 +50,15 @@ def cam_res():
             cam.gain = float(data["gain"])
         cam.ia.start_acquisition()
     return render_template(
-        "index.html", gain=cam.gain, res=cam.getSize(), expo=cam.exposure
+        "index.html", gain=cam.gain, res=cam.get_size(), expo=cam.exposure
     )
 
 @app.route('/video_feed')
 def video_feed():
     print("/video_feed")
-    # cam.Trigger()
+    cam.trigger()
     print("Trigger Done")
-    return Response(cam.Grab(), mimetype="multipart/x-mixed-replace; boundary=frame")
-
-    """
-
-    return Response(gen.get_frame(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-    """
+    return Response(cam.grab(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route('/fps')
 def fps():
