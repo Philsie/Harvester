@@ -40,7 +40,9 @@ class GenICam:
             self.Harvester.add_file(path)
             self.Harvester.update()
         log.info("ctis loaded")
-        
+
+        self.scale = None
+
         if len(self.Harvester.device_info_list) > 0:
             self.cam = self.Harvester.device_info_list[0]
             self.ia = self.Harvester.create_image_acquirer(
@@ -59,14 +61,14 @@ class GenICam:
             log.info("DEBUG-CHECKPOINT: 3")
             self.gain = self.config["gain"]
             log.info("DEBUG-CHECKPOINT: 4")
+            self.ia.stop_image_acquisition()
             self.ia.remote_device.node_map.TriggerMode.value = "On"
             log.info("DEBUG-CHECKPOINT: 5")
             self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
             log.info("DEBUG-CHECKPOINT: 6")
             self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
+            self.ia.start_image_acquisition()
             log.info("DEBUG-CHECKPOINT: 7")
-            self.ia.remote_device.node_map.TriggerSource.value = "Line1"
-            log.info("DEBUG-CHECKPOINT: 8")
             print("Post Checkpoint")
             log.info("Image-Acquirer created")
         
@@ -88,7 +90,7 @@ class GenICam:
                     pass
                 log.debug(f"{name}={value}{info}")
         
-        log.info("Start Logging attributes")
+        log.info("Stop Logging attributes")
         #%%
 
         log.info("Init Done: GenICam")
@@ -117,6 +119,7 @@ class GenICam:
 
     @property
     def exposure(self):
+        print("exposure.getter")
         return self.ia.remote_device.node_map.ExposureTime.value
 
     @exposure.setter
@@ -128,6 +131,7 @@ class GenICam:
 
     @property
     def gain(self):
+        print("gain.getter")
         return self.ia.remote_device.node_map.Gain.value
 
     @gain.setter
@@ -148,14 +152,20 @@ class GenICam:
     def grab(self):
         log.info("GenICam.grab")
         time = dt.now()
+        print("GRAB")
         with self.ia.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
             image_data = component.data.reshape(self.height, self.width, 3)[:, :, ::-1]
             img = Image.fromarray(image_data)
             img = img.crop()
             img_byte_arr = io.BytesIO()
-
-            img.save(img_byte_arr, format="JPEG")
+            if self.scale != None:
+                log.info(self.scale)
+                log.info(type(self.scale))
+                self.scale = self.scale.split(",")
+                img = img.resize((int(self.scale[0][1:]), int(self.scale[1][:-1])))
+            img.save(img_byte_arr, format="PNG")
+            img.save("debuf.png")
             img_byte_arr = img_byte_arr.getvalue()
             fps = dt.now().timestamp() - time.timestamp()
             self.Frame = (
@@ -163,3 +173,6 @@ class GenICam:
                 b"Content-Type: image/jpeg\r\n\r\n" + img_byte_arr + b"\r\n"
             )
             return self.Frame
+
+    def info(self):
+        return str(self.cam)

@@ -6,14 +6,29 @@
   <body>
     <h1>Video Streaming Demonstration</h1>
 
-      <form action="/cam_res" method = "POST">	
+		{{cur_res}}
+      <form action="/cam_config" method = "POST">	
      	<p><input type = "number" name = "exposure" placeholder="{{expo}}" /> Exposure</p>
      	<p><input type = "number" name = "gain" placeholder="{{gain}}" />Gain</p>
+	<select name="resolution" id="resolution">
+		{% for r in res%}
+			{%if r|string == cur_res%}
+				<option selected="selected"  value= "{{r}}">{{r}}</option>"
+			{%else%}
+				<option value= "{{r}}">{{r}}</option>"
+			{%endif%}
+		{%endfor%}
+	</select><br>
 	<p><input type = "submit" value = "Submit" /></p>  
       </form>
-      
       ------------------------------------<br>
-      <img id="cam" src="{{url_for('video_feed')}}" width="{{res[0]}}" height="{{res[1]}}"><br>
-      <a href="{{ url_for('index') }}"><button>REFRESH</button></a>
+	<img id="cam" src="{{url_for('video_feed')}}"><br>
+      <a href="{{ url_for('index') }}"><button>REFRESH</button></a><br>
+      ------------------------------------<br>
+      {{info|safe}}
+  <script>
+	var cam = document.getElementById("cam");
+	setInterval(cam.reload(), 1);
+  </script>
   </body>
 </html
