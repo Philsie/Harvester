@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import random as rd
+from datetime import datetime as dt
 
 from flask import Flask, Response, flash, render_template, request, send_file
 
@@ -60,7 +61,6 @@ def cam_res():
             cam.exposure = int(data["exposure"])
         if "gain" in keys and data["gain"] != "":
             cam.gain = float(data["gain"])
-        cam.scale = data["resolution"]
         cam.ia.start_acquisition()
     return render_template(
         "index.html",
@@ -73,12 +73,18 @@ def cam_res():
 
 @app.route('/video_feed')
 def video_feed():
-    cam.trigger()
-    return Response(cam.grab(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    return Response(gen_frame(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route('/fps')
 def fps():
     return Response("666", mimetype="text")
+
+def gen_frame():
+    while True:
+        cam.exposure = rd.randint(800,1200)
+        cam.trigger()
+        print(dt.now())
+        yield cam.grab()
 
 print(__name__)
 #%%

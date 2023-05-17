@@ -2,11 +2,10 @@
 <html>
   <head>
     <title>Video Streaming Demonstration</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='stylesheets/index.css') }}" >
   </head>
   <body>
     <h1>Video Streaming Demonstration</h1>
-
-		{{cur_res}}
       <form action="/cam_config" method = "POST">	
      	<p><input type = "number" name = "exposure" placeholder="{{expo}}" /> Exposure</p>
      	<p><input type = "number" name = "gain" placeholder="{{gain}}" />Gain</p>
@@ -21,14 +20,8 @@
 	</select><br>
 	<p><input type = "submit" value = "Submit" /></p>  
       </form>
-      ------------------------------------<br>
 	<img id="cam" src="{{url_for('video_feed')}}"><br>
       <a href="{{ url_for('index') }}"><button>REFRESH</button></a><br>
-      ------------------------------------<br>
       {{info|safe}}
-  <script>
-	var cam = document.getElementById("cam");
-	setInterval(cam.reload(), 1);
-  </script>
   </body>
 </html

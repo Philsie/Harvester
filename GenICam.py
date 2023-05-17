@@ -150,6 +150,7 @@ class GenICam:
         return (self.width, self.height)
 
     def grab(self):
+        #while True:
         log.info("GenICam.grab")
         time = dt.now()
         print("GRAB")
