@@ -26,7 +26,8 @@ class GenICam:
     def __init__(self) -> None:
         log.info("Init: GeniCam")
 
-        
+        self.supported_PixelFormats = ["BGR8", "Mono8"]
+
         with open("config.json") as config_file:
             self.config = json.load(config_file)
         log.info("Config loaded")
@@ -48,34 +49,38 @@ class GenICam:
             self.ia = self.Harvester.create_image_acquirer(
                 self.Harvester.device_info_list.index(self.cam)
             )
-            self.ia.remote_device.node_map.PixelFormat.value = (
-                "BGR8"  # Resets width and size
-            )
+            log.info(self.Harvester.device_info_list)
+            self.PixelFormat = "BGR8"
+            log.info(self.ia.remote_device.node_map.PixelFormat.symbolics)
             print("Pre Checkpoint")
-            log.info("DEBUG-CHECKPOINT: 0")
             self.width = self.config["width"]
-            log.info("DEBUG-CHECKPOINT: 1")
             self.height = self.config["height"]
-            log.info("DEBUG-CHECKPOINT: 2")
             self.exposure = self.config["exposure"]
-            log.info("DEBUG-CHECKPOINT: 3")
             self.gain = self.config["gain"]
-            log.info("DEBUG-CHECKPOINT: 4")
+
+            if (
+                self.ia.remote_device.node_map.DeviceModelName.value
+                not in self.config["skip_autoWhiteBalance_models"]
+            ):
+                try:
+                    self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
+                except:
+                    log.warning("setting AutoBalanceWhite failed")
+
             self.ia.stop_image_acquisition()
             self.ia.remote_device.node_map.TriggerMode.value = "On"
-            log.info("DEBUG-CHECKPOINT: 5")
             self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
-            log.info("DEBUG-CHECKPOINT: 6")
             self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
             self.ia.start_image_acquisition()
-            log.info("DEBUG-CHECKPOINT: 7")
+            self.trigger()
+            self.grab()
             print("Post Checkpoint")
             log.info("Image-Acquirer created")
         
         #%%
         log.info("Start Logging attributes")
         for name in dir(self.ia.remote_device.node_map):
-            if not name[0].isupper():
+            if not name[0].isupper() or True:
                 info = ""
                 value = ""
                 try:
@@ -119,7 +124,6 @@ class GenICam:
 
     @property
     def exposure(self):
-        print("exposure.getter")
         return self.ia.remote_device.node_map.ExposureTime.value
 
     @exposure.setter
@@ -131,7 +135,6 @@ class GenICam:
 
     @property
     def gain(self):
-        print("gain.getter")
         return self.ia.remote_device.node_map.Gain.value
 
     @gain.setter
@@ -141,30 +144,45 @@ class GenICam:
         else:
             log.warning(f"Invalid input for gain.setter: {g}, {type(g)}")
 
+    @property
+    def PixelFormat(self):
+        return self.ia.remote_device.node_map.PixelFormat.value
+
+    @PixelFormat.setter
+    def PixelFormat(self, pf):
+        if isinstance(pf, str) and pf in np.intersect1d(
+            self.supported_PixelFormats,
+            self.ia.remote_device.node_map.PixelFormat.symbolics,
+        ):
+            self.ia.remote_device.node_map.PixelFormat.value = pf
+        else:
+            log.warning(f"Invalid input for PixelFormat.setter: {pf}, {type(pf)}")
+
     def trigger(self):
         log.info("GenICam.trigger")
         self.ia.remote_device.node_map.TriggerSoftware.execute()
 
     def get_size(self):
-        log.info("GenICam.get_size")
-        return (self.width, self.height)
+        return self.scale
 
     def grab(self):
-        #while True:
         log.info("GenICam.grab")
         time = dt.now()
-        print("GRAB")
         with self.ia.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
-            image_data = component.data.reshape(self.height, self.width, 3)[:, :, ::-1]
+            component_data = component.data
+            if self.scale == None:
+                self.scale = [component.width,component.height]
+            if self.PixelFormat == "BGR8":
+                image_data = component_data.reshape(self.height, self.width, 3)[
+                    :, :, ::-1
+                ]
+            else:
+                image_data = component_data.reshape(self.height, self.width)
             img = Image.fromarray(image_data)
             img = img.crop()
             img_byte_arr = io.BytesIO()
-            if self.scale != None:
-                log.info(self.scale)
-                log.info(type(self.scale))
-                self.scale = self.scale.split(",")
-                img = img.resize((int(self.scale[0][1:]), int(self.scale[1][:-1])))
+            img = img.resize((int(self.scale[0]), int(self.scale[1])))
             img.save(img_byte_arr, format="PNG")
             img.save("debuf.png")
             img_byte_arr = img_byte_arr.getvalue()

@@ -1,27 +1,66 @@
-
 <html>
-  <head>
-    <title>Video Streaming Demonstration</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='stylesheets/index.css') }}" >
-  </head>
-  <body>
-    <h1>Video Streaming Demonstration</h1>
-      <form action="/cam_config" method = "POST">	
-     	<p><input type = "number" name = "exposure" placeholder="{{expo}}" /> Exposure</p>
-     	<p><input type = "number" name = "gain" placeholder="{{gain}}" />Gain</p>
-	<select name="resolution" id="resolution">
-		{% for r in res%}
-			{%if r|string == cur_res%}
-				<option selected="selected"  value= "{{r}}">{{r}}</option>"
-			{%else%}
-				<option value= "{{r}}">{{r}}</option>"
-			{%endif%}
-		{%endfor%}
-	</select><br>
-	<p><input type = "submit" value = "Submit" /></p>  
-      </form>
-	<img id="cam" src="{{url_for('video_feed')}}"><br>
-      <a href="{{ url_for('index') }}"><button>REFRESH</button></a><br>
-      {{info|safe}}
-  </body>
+
+<head>
+  <title>Video Streaming Demonstration</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='stylesheets/index.css') }}">
+  <script>
+    function keepRatioWidth() {
+      if (document.getElementById("aspectRatio").checked) {
+        document.getElementById("height").value = Math.round(parseFloat((document.getElementById("width").value * {{ res[1]}}) /{{res[0]}}))
+    } ;
+  }
+  </script>
+  <script>
+  function keepRatioHeight() {
+      if (document.getElementById("aspectRatio").checked) {
+        document.getElementById("width").value = Math.round(parseFloat((document.getElementById("height").value * {{ res[0]}}) /{{res[1]}}))
+    } ;
+  }
+  </script>
+</head>
+
+<body>
+  <h1>Video Streaming Demonstration</h1>
+  <form action="/cam_config" method="POST">
+    <div>
+      <p><input type="number" name="exposure" value="{{expo}}" id="exposure"/></p>
+      <label for="exposure"> Exposure </label>
+    </div>
+    <div>
+      <p><input type="number" name="gain" value="{{gain}}" id="gain"/> </p>
+      <label for="gain"> Gain </label>
+    </div>
+    <div>
+      <input type="checkbox" id="aspectRatio">
+      <label for="aspectRatio">keep aspect ratio</label>
+    </div>
+    <div>
+      <p><input type="number" name="width" value="{{res[0]}}" id="width" onchange="keepRatioWidth()" /></p>
+      <label for="width"> Width </label>
+    </div>
+    <div>
+      <p><input type="number" name="height" value="{{res[1]}}" id="height" onchange="keepRatioHeight()"/></p>
+      <label for="height"> Height </label>
+    </div>
+    <div>
+      <select name="PixelFormat" class="selectpicker form-control" id="pixelformat">
+        {% for pf in available_pixelformats %}
+          {% if pf == pixelformat%}
+            <option value="{{ pf }}" selected="selected" >{{ pf }}</option>
+          {% else %}
+          <option value="{{ pf }}" >{{ pf }}</option>
+          {%endif%}
+        {% endfor %}                                              
+      </select>
+      <label for="pixelformat"> PixelFormat </label>
+    </div>
+    <p><input type="submit" value="Submit" /></p>
+  </form>
+  <img id="cam" src="{{url_for('video_feed')}}"><br>
+  <a href="{{ url_for('index') }}"><button>REFRESH</button></a><br>
+  {{info|safe}}
+
+
+</body>
+
 </html

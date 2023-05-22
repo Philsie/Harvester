@@ -1,75 +1,104 @@
 /* Body styles */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f5f5f5;
+  background-color: #1f1f1f;
   margin: 0;
   padding: 20px;
+  color: #ccc;
+  display: grid;
+  place-items: center;
+  height: 100vh;
+}
+
+/* Div styles */
+div{
+  margin-top: 5px;
 }
 
 /* Header styles */
 h1 {
   text-align: center;
-  color: #333;
+  color: #fff;
+  grid-column: 1 / -1;
 }
 
 /* Form styles */
 form {
-  margin: 20px auto;
+  margin: 20px 0;
+  margin-top: 5px;
   max-width: 400px;
   padding: 20px;
-  background-color: #fff;
-  border: 1px solid #ccc;
+  background-color: #333;
+  border: 1px solid #555;
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  display: grid;
+  gap: 10px;
 }
 
 form p {
-  margin: 10px 0;
+  margin-bottom: 0;
 }
 
-form input[type="number"],
-form select {
+form input[type="number"] {
   display: block;
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: none;
+  border-bottom: 1px solid #555;
   font-size: 16px;
-  color: #555;
-  background-color: #f9f9f9;
+  color: #ccc;
+  background-color: #333;
 }
 
-form select {
+
+form input[type="checkbox"] {
+  display: inline-block;
   margin-top: 5px;
+  vertical-align: middle;
+  justify-self: left;
+}
+
+form label {
+  display: inline-block;
+  padding: 10px;
+  margin-left: 5px;
+  color: #ccc;
+  vertical-align: middle;
+}
+
+form select{
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-bottom: 1px solid #555;
+  font-size: 16px;
+  color: #ccc;
+  background-color: #333;
 }
 
 form input[type="submit"] {
-  display: inline-block;
+  display: block;
+  width: 100%;
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
   font-size: 16px;
   color: #fff;
-  background-color: #4CAF50;
+  background-color: #007bff;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
 form input[type="submit"]:hover {
-  background-color: #45a049;
-}
-
-/* Separator styles */
-hr {
-  border: none;
-  border-top: 1px solid #ccc;
-  margin: 20px 0;
+  background-color: #0056b3;
 }
 
 /* Image styles */
 img#cam {
   display: block;
-  margin: 20px auto;
+  margin: 20px 0;
   max-width: 100%;
   height: auto;
 }
@@ -96,8 +125,8 @@ a button:hover {
 .info {
   margin: 20px 0;
   padding: 20px;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
+  background-color: #333;
+  border: 1px solid #555;
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }

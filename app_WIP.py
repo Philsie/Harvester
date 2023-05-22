@@ -2,9 +2,11 @@ import argparse
 import json
 import os
 import random as rd
+import numpy as np
+
 from datetime import datetime as dt
 
-from flask import Flask, Response, flash, render_template, request, send_file
+from flask import Flask, Response, flash, render_template, request, send_file, redirect, url_for
 
 from GenICam import GenICam
 
@@ -14,7 +16,6 @@ from GenICam import GenICam
 
 #Todo
 #SynchronizedCamera
-#Treading --> function
 
 app = Flask(__name__)
 
@@ -30,17 +31,16 @@ def before_first_request():
 
 @app.route('/')
 def index():
-    with open("./templates/config.json") as config_file:
-        config = json.load(config_file)
     return render_template(
         "index.html",
         gain=cam.gain,
-        res=config["aspects"],
+        res=cam.scale,
         cur_res=cam.scale,
         expo=cam.exposure,
         info=cam_info,
+        pixelformat=cam.PixelFormat,
+        available_pixelformats=np.intersect1d(cam.supported_PixelFormats,cam.ia.remote_device.node_map.PixelFormat.symbolics)
     )
-
 
 @app.route("/info")
 def info():
@@ -50,26 +50,23 @@ def info():
 @app.route("/cam_config", methods=["POST"])
 def cam_res():
     if request.method == "POST":
-        with open("./templates/config.json") as config_file:
-            config = json.load(config_file)
         data = request.form
         print(data)
         cam.ia.stop_acquisition()
         keys = data.keys()
         print(keys)
         if "exposure" in keys and data["exposure"] != "":
-            cam.exposure = int(data["exposure"])
+            cam.exposure = int(float(data["exposure"]))
         if "gain" in keys and data["gain"] != "":
             cam.gain = float(data["gain"])
+        if "width" in keys and data["width"] != "":
+            cam.scale[0] = int(data["width"])
+        if "height" in keys and data["height"] != "":
+            cam.scale[1] = int(data["height"])
+        if "PixelFormat" in keys and str(data["PixelFormat"]) != "":
+            cam.PixelFormat = data["PixelFormat"]
         cam.ia.start_acquisition()
-    return render_template(
-        "index.html",
-        gain=cam.gain,
-        res=config["aspects"],
-        cur_res=cam.scale,
-        expo=cam.exposure,
-        info=cam_info,
-    )
+    return redirect(url_for("index"))
 
 @app.route('/video_feed')
 def video_feed():
@@ -86,8 +83,7 @@ def gen_frame():
         print(dt.now())
         yield cam.grab()
 
-print(__name__)
-#%%
+
 if __name__ == '__main__':
     print("Main")
     app.run(host="0.0.0.0", port=5050, debug=True)

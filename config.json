@@ -3,7 +3,8 @@
     "height":1024,
     "exposure": 5000,
     "gain": 2.0,
-    "ctis": ["/home/philipp/ximea/package/libs/gentl/X64/ximea.gentl.cti"]
+    "ctis": ["/home/philipp/ximea/package/libs/gentl/X64/ximea.gentl.cti"],
+    "skip_autoWhiteBalance_models": ["MQ013CG-E2"]
 
 
 }
