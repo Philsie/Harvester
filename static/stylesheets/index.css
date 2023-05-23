@@ -1,132 +1,80 @@
-/* Body styles */
 body {
+  background-color: #222;
+  color: #fff;
   font-family: Arial, sans-serif;
-  background-color: #1f1f1f;
-  margin: 0;
-  padding: 20px;
-  color: #ccc;
-  display: grid;
-  place-items: center;
-  height: 100vh;
 }
 
-/* Div styles */
-div{
-  margin-top: 5px;
-}
-
-/* Header styles */
 h1 {
+  color: #fff;
   text-align: center;
+  margin-top: 20px;
+}
+
+.container, div#footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.container div {
+  margin-bottom: 10px;
+  margin-right: 20px;
+}
+
+form{
+  width: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 5px;
+}
+
+label {
   color: #fff;
-  grid-column: 1 / -1;
+  font-weight: bold;
 }
 
-/* Form styles */
-form {
-  margin: 20px 0;
-  margin-top: 5px;
-  max-width: 400px;
-  padding: 20px;
+input[type="number"],
+select {
   background-color: #333;
-  border: 1px solid #555;
-  border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  display: grid;
-  gap: 10px;
-}
-
-form p {
-  margin-bottom: 0;
-}
-
-form input[type="number"] {
-  display: block;
-  width: 100%;
-  padding: 10px;
+  color: #fff;
   border: none;
-  border-bottom: 1px solid #555;
-  font-size: 16px;
-  color: #ccc;
+  padding: 5px;
+  width: 150px;
+}
+
+
+
+input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+input[type="submit"],
+button {
   background-color: #333;
-}
-
-
-form input[type="checkbox"] {
-  display: inline-block;
-  margin-top: 5px;
-  vertical-align: middle;
-  justify-self: left;
-}
-
-form label {
-  display: inline-block;
-  padding: 10px;
-  margin-left: 5px;
-  color: #ccc;
-  vertical-align: middle;
-}
-
-form select{
-  display: block;
-  width: 100%;
-  padding: 10px;
+  color: #fff;
   border: none;
-  border-bottom: 1px solid #555;
-  font-size: 16px;
-  color: #ccc;
-  background-color: #333;
-}
-
-form input[type="submit"] {
-  display: block;
-  width: 100%;
   padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  color: #fff;
-  background-color: #007bff;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  height: 28px;
+  justify-content: center;
 }
 
-form input[type="submit"]:hover {
-  background-color: #0056b3;
-}
-
-/* Image styles */
-img#cam {
-  display: block;
-  margin: 20px 0;
+img {
   max-width: 100%;
   height: auto;
+  margin-bottom: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Button styles */
-a button {
-  display: inline-block;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
+a {
   color: #fff;
-  background-color: #007bff;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
   text-decoration: none;
 }
 
-a button:hover {
-  background-color: #0056b3;
-}
-
-/* Info styles */
-.info {
-  margin: 20px 0;
-  padding: 20px;
-  background-color: #333;
-  border: 1px solid #555;
-  border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+button {
+  margin-top: 10px;
 }

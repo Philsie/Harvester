@@ -6,7 +6,7 @@ from datetime import datetime as dt
 
 import numpy as np
 from harvesters.core import Harvester
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +23,8 @@ log.info("Start of Log - "+str(dt.now()))
 
 
 class GenICam:
+    """universal camera class used to manage multiple types of camera
+    """
     def __init__(self) -> None:
         log.info("Init: GeniCam")
 
@@ -77,8 +79,9 @@ class GenICam:
             print("Post Checkpoint")
             log.info("Image-Acquirer created")
         
-        #%%
-        log.info("Start Logging attributes")
+
+        #%%start of node listing
+        log.debug("Start Logging attributes")
         for name in dir(self.ia.remote_device.node_map):
             if not name[0].isupper() or True:
                 info = ""
@@ -95,13 +98,14 @@ class GenICam:
                     pass
                 log.debug(f"{name}={value}{info}")
         
-        log.info("Stop Logging attributes")
-        #%%
-
+        log.debug("Stop Logging attributes")
+        #%%end of node listing
         log.info("Init Done: GenICam")
 
+    #%% GenICam properties
     @property
     def width(self):
+        """set/get width of image taken"""
         return self.ia.remote_device.node_map.Width.value
 
     @width.setter
@@ -113,6 +117,7 @@ class GenICam:
 
     @property
     def height(self):
+        """set/get height of image taken"""
         return self.ia.remote_device.node_map.Height.value
 
     @height.setter
@@ -124,6 +129,7 @@ class GenICam:
 
     @property
     def exposure(self):
+        """set/get exposure of image taken"""
         return self.ia.remote_device.node_map.ExposureTime.value
 
     @exposure.setter
@@ -135,6 +141,7 @@ class GenICam:
 
     @property
     def gain(self):
+        """set/get gain of image taken"""
         return self.ia.remote_device.node_map.Gain.value
 
     @gain.setter
@@ -146,6 +153,7 @@ class GenICam:
 
     @property
     def PixelFormat(self):
+        """set/get PixelFormat of image taken"""
         return self.ia.remote_device.node_map.PixelFormat.value
 
     @PixelFormat.setter
@@ -158,20 +166,23 @@ class GenICam:
         else:
             log.warning(f"Invalid input for PixelFormat.setter: {pf}, {type(pf)}")
 
+    #%% GenICam functions
+
     def trigger(self):
+        """Make the camera take a picture"""
         log.info("GenICam.trigger")
         self.ia.remote_device.node_map.TriggerSoftware.execute()
 
-    def get_size(self):
-        return self.scale
-
-    def grab(self):
+    def grab(self,Frame = False):
+        """Return the image taken as a list
+        Frame=True ==> returns a Frame for displaying on a website
+        """
         log.info("GenICam.grab")
         time = dt.now()
         with self.ia.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
             component_data = component.data
-            if self.scale == None:
+            if self.scale is None:
                 self.scale = [component.width,component.height]
             if self.PixelFormat == "BGR8":
                 image_data = component_data.reshape(self.height, self.width, 3)[
@@ -179,19 +190,36 @@ class GenICam:
                 ]
             else:
                 image_data = component_data.reshape(self.height, self.width)
-            img = Image.fromarray(image_data)
-            img = img.crop()
-            img_byte_arr = io.BytesIO()
-            img = img.resize((int(self.scale[0]), int(self.scale[1])))
-            img.save(img_byte_arr, format="PNG")
-            img.save("debuf.png")
-            img_byte_arr = img_byte_arr.getvalue()
-            fps = dt.now().timestamp() - time.timestamp()
-            self.Frame = (
-                b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" + img_byte_arr + b"\r\n"
-            )
-            return self.Frame
+            
+            #log.info(image_data)
+
+            if Frame:
+                img = Image.fromarray(image_data)
+    
+                draw = ImageDraw.Draw(img)
+                font = ImageFont.truetype('Arial.ttf', size=36)
+                draw.text((10, 10), str(dt.now()), font=font, fill=255)
+                draw.text((10, 50), f"{round(self.ia.remote_device.node_map.DeviceTemperature.value,1)} °C", font=font, fill=255)
+                draw.text((10, 90), f"{round(self.ia.remote_device.node_map.AcquisitionFrameRate.value,1)} FPS", font=font, fill=255)
+                
+                if self.PixelFormat=="BGR8":
+                    shape = [self.scale[0]-40,0,self.scale[0],40]
+                    draw.rectangle(shape,fill="red")
+                    shape = [self.scale[0]-80,0,self.scale[0]-40,40]
+                    draw.rectangle(shape,fill="green")
+                    shape = [self.scale[0]-120,0,self.scale[0]-80,40]
+                    draw.rectangle(shape,fill="blue")
+
+                img_byte_arr = io.BytesIO()
+                img = img.resize((int(self.scale[0]), int(self.scale[1])))
+                img.save(img_byte_arr, format="PNG")
+                img_byte_arr = img_byte_arr.getvalue()
+                return (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n" + img_byte_arr + b"\r\n"
+                )
+            return image_data
 
     def info(self):
+        """Return camera information"""
         return str(self.cam)

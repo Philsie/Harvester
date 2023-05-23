@@ -4,6 +4,8 @@ import os
 import random as rd
 import numpy as np
 
+import io
+
 from datetime import datetime as dt
 
 from flask import Flask, Response, flash, render_template, request, send_file, redirect, url_for
@@ -21,6 +23,7 @@ app = Flask(__name__)
 
 @app.before_first_request
 def before_first_request():
+    """code run before loading first page"""
     print("Start: before_first_request")
     global cam
     global cam_info
@@ -31,6 +34,7 @@ def before_first_request():
 
 @app.route('/')
 def index():
+    """main page displayed"""
     return render_template(
         "index.html",
         gain=cam.gain,
@@ -44,17 +48,17 @@ def index():
 
 @app.route("/info")
 def info():
+    """url for retreaving information on camera"""
     return f"{cam.info()}"
 
 
 @app.route("/cam_config", methods=["POST"])
 def cam_res():
+    """api endpoint for changing camera settings"""
     if request.method == "POST":
         data = request.form
-        print(data)
         cam.ia.stop_acquisition()
         keys = data.keys()
-        print(keys)
         if "exposure" in keys and data["exposure"] != "":
             cam.exposure = int(float(data["exposure"]))
         if "gain" in keys and data["gain"] != "":
@@ -70,20 +74,19 @@ def cam_res():
 
 @app.route('/video_feed')
 def video_feed():
+    """url used for image streaming"""
     return Response(gen_frame(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-@app.route('/fps')
-def fps():
-    return Response("666", mimetype="text")
-
 def gen_frame():
+    """get frame displayable on website from camera"""
     while True:
-        cam.exposure = rd.randint(800,1200)
+        cam.exposure = rd.randint(cam.exposure-200,cam.exposure+200)
         cam.trigger()
-        print(dt.now())
-        yield cam.grab()
+        """image_data = cam.grab()
+        print(image_data)"""
+        yield cam.grab(Frame=True)
 
 
 if __name__ == '__main__':
-    print("Main")
+    """Run Flask application"""
     app.run(host="0.0.0.0", port=5050, debug=True)
