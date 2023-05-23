@@ -51,6 +51,13 @@ def info():
     """url for retreaving information on camera"""
     return f"{cam.info()}"
 
+@app.route("/download")
+def download():
+    File = "cam_download.png"
+    cam.trigger()
+    cam.grab(save=True)
+    return send_file(File, as_attachment=True)
+
 
 @app.route("/cam_config", methods=["POST"])
 def cam_res():

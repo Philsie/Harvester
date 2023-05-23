@@ -66,11 +66,10 @@
   </form>
   <img id="cam" src="{{url_for('video_feed')}}"><br>
   <div id="footer">
-    <a href="{{ url_for('index') }}"><button>REFRESH</button></a><br>
-    
-    {{info|safe}}
+    <p><a href="{{ url_for('index') }}"><button>REFRESH</button></a></p>
+    <p><a href="{{ url_for('download') }}"><button>Download Image</button></a></p>
   </div>
+  <div id="footer"><p>{{info|safe}} </p></div>
 
 </body>
-
 </html
