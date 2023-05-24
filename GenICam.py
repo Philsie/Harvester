@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from datetime import datetime as dt
+import copy
 
 import numpy as np
 from harvesters.core import Harvester
@@ -173,55 +174,31 @@ class GenICam:
         log.info("GenICam.trigger")
         self.ia.remote_device.node_map.TriggerSoftware.execute()
 
-    def grab(self,Frame = False, save = False):
+    def grab(self, save = False):
         """Return the image taken as a list
         Frame=True ==> returns a Frame for displaying on a website
         """
         log.info("GenICam.grab")
         time = dt.now()
+        image_data = None
         with self.ia.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
             component_data = component.data
             if self.scale is None:
                 self.scale = [component.width,component.height]
             if self.PixelFormat == "BGR8":
-                image_data = component_data.reshape(self.height, self.width, 3)[
+                image_data = copy.copy(component_data.reshape(self.height, self.width, 3)[
                     :, :, ::-1
-                ]
+                ])
             else:
-                image_data = component_data.reshape(self.height, self.width)
+                image_data = copy.copy(component_data.reshape(self.height, self.width))
             
-            #log.info(image_data)
-            if save:
-                img = Image.fromarray(image_data)
-                img.save("cam_download.png")
+        #log.info(image_data)
+        if save:
+            img = Image.fromarray(image_data)
+            img.save("cam_download.png")
 
-            if Frame:
-                img = Image.fromarray(image_data)
-    
-                draw = ImageDraw.Draw(img)
-                font = ImageFont.truetype('Arial.ttf', size=36)
-                draw.text((10, 10), dt.now().strftime('%Y-%m-%d %H:%M:%S'), font=font, fill=255)
-                draw.text((10, 50), f"{round(self.ia.remote_device.node_map.DeviceTemperature.value,1)} °C", font=font, fill=255)
-                draw.text((10, 90), f"{round(self.ia.remote_device.node_map.AcquisitionFrameRate.value,1)} FPS", font=font, fill=255)
-                
-                if self.PixelFormat=="BGR8":
-                    shape = [self.scale[0]-40,0,self.scale[0],40]
-                    draw.rectangle(shape,fill="red")
-                    shape = [self.scale[0]-80,0,self.scale[0]-40,40]
-                    draw.rectangle(shape,fill="green")
-                    shape = [self.scale[0]-120,0,self.scale[0]-80,40]
-                    draw.rectangle(shape,fill="blue")
-
-                img_byte_arr = io.BytesIO()
-                img = img.resize((int(self.scale[0]), int(self.scale[1])))
-                img.save(img_byte_arr, format="PNG")
-                img_byte_arr = img_byte_arr.getvalue()
-                return (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n" + img_byte_arr + b"\r\n"
-                )
-            return image_data
+        return image_data
 
     def info(self):
         """Return camera information"""

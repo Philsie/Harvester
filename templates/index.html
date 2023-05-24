@@ -17,6 +17,34 @@
     } ;
   }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+  <script type="text/javascript">
+      var socket = io.connect();
+      socket.on('connect', function() {
+          console.log('Connected to server');
+      });
+      socket.on('temp_feed', function(data) {
+          console.log('Received data from temp_feed: ', data);
+          // Update the website with the received data
+          document.getElementById('temp_feed').innerHTML = "current temperature: "+data;
+      });
+      socket.on('video_feed', function(data) {
+          console.log('Received data from video_feed: ', data);
+          // Update the website with the received data
+          document.getElementById('cam').src = 'data:image/jpeg;base64,' + data.image;;
+      });
+      socket.on('time', function(data) {
+          console.log('Received data from time: ', data);
+          // Update the website with the received data
+          document.getElementById('time').innerHTML = "current time: "+data;;
+      });
+      socket.on('fps', function(data) {
+          console.log('Received data from fps: ', data);
+          // Update the website with the received data
+          document.getElementById('fps').innerHTML = "current fps: " +data;;
+      });
+  </script>
+
 </head>
 
 <body>
@@ -64,7 +92,10 @@
     </div>
     
   </form>
-  <img id="cam" src="{{url_for('video_feed')}}"><br>
+  <pre id="temp_feed"></pre><br>
+  <pre id="time"></pre><br>
+  <pre id="fps"></pre><br>
+  <img id="cam" src="" alt="Camera Stream"><br>
   <div id="footer">
     <p><a href="{{ url_for('index') }}"><button>REFRESH</button></a></p>
     <p><a href="{{ url_for('download') }}"><button>Download Image</button></a></p>
