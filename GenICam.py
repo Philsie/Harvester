@@ -9,13 +9,19 @@ import numpy as np
 from harvesters.core import Harvester
 from PIL import Image, ImageDraw, ImageFont
 
+import time
+
+
+##check temp sensor location + get/set 
+#ref ximea.py --> get_temperature
+
 log = logging.getLogger(__name__)
 
 logging.basicConfig(
     format="%(asctime)s.%(msecs)d [%(levelname)s]: %(filename)s:%(lineno)d: %(message)s",
     datefmt="%T",
     filename="app_WIP.log",
-    level=logging.INFO
+    level=logging.DEBUG
     ,
 )
 
@@ -47,39 +53,10 @@ class GenICam:
 
         self.scale = None
 
+        self.device_list = copy.copy(self.Harvester.device_info_list)
+
         if len(self.Harvester.device_info_list) > 0:
-            self.cam = self.Harvester.device_info_list[0]
-            self.ia = self.Harvester.create_image_acquirer(
-                self.Harvester.device_info_list.index(self.cam)
-            )
-            log.info(self.Harvester.device_info_list)
-            self.PixelFormat = "BGR8"
-            log.info(self.ia.remote_device.node_map.PixelFormat.symbolics)
-            print("Pre Checkpoint")
-            self.width = self.config["width"]
-            self.height = self.config["height"]
-            self.exposure = self.config["exposure"]
-            self.gain = self.config["gain"]
-
-            if (
-                self.ia.remote_device.node_map.DeviceModelName.value
-                not in self.config["skip_autoWhiteBalance_models"]
-            ):
-                try:
-                    self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
-                except:
-                    log.warning("setting AutoBalanceWhite failed")
-
-            self.ia.stop_image_acquisition()
-            self.ia.remote_device.node_map.TriggerMode.value = "On"
-            self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
-            self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
-            self.ia.start_image_acquisition()
-            self.trigger()
-            self.grab()
-            print("Post Checkpoint")
-            log.info("Image-Acquirer created")
-        
+            self.setup_ia()
 
         #%%start of node listing
         log.debug("Start Logging attributes")
@@ -102,6 +79,56 @@ class GenICam:
         log.debug("Stop Logging attributes")
         #%%end of node listing
         log.info("Init Done: GenICam")
+
+    def setup_ia(self,id = None):
+
+
+        if self.cam is not None and id == str(self.cam).split("'")[1]:
+            return
+
+        def select_by_id(id):
+            #id = "MQ013CG-E2 (38205351)"
+            for device in self.Harvester.device_info_list:
+                log.info(str(device).split("'")[1])
+                if str(device).split("'")[1] == id:
+                    return device
+            return None
+        
+        device = select_by_id(id)
+
+        if id is not None and device is not None:
+            self.ia = self.Harvester.create_image_acquirer(
+                self.Harvester.device_info_list.index(device)
+            )
+            self.cam=self.Harvester.device_info_list.index(device)
+        else:
+            self.ia = self.Harvester.create_image_acquirer(
+                0
+            )
+            self.cam = self.Harvester.device_info_list[0]
+
+        print(self.ia)
+  
+        log.info(self.Harvester.device_info_list)
+        self.PixelFormat = "BGR8"
+        log.info(self.ia.remote_device.node_map.PixelFormat.symbolics)
+        print("Pre Checkpoint")
+        self.width = self.config["width"]
+        self.height = self.config["height"]
+        self.exposure = self.config["exposure"]
+        self.gain = self.config["gain"]
+
+        self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
+
+        self.ia.stop_image_acquisition()
+        self.ia.remote_device.node_map.TriggerMode.value = "On"
+        self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
+        self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
+        self.ia.start_image_acquisition()
+        self.trigger()
+        self.grab()
+        print("Post Checkpoint")
+        log.info("Image-Acquirer created")
 
     #%% GenICam properties
     @property
@@ -176,11 +203,9 @@ class GenICam:
 
     def grab(self, save = False):
         """Return the image taken as a list
-        Frame=True ==> returns a Frame for displaying on a website
         """
         log.info("GenICam.grab")
         time = dt.now()
-        image_data = None
         with self.ia.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
             component_data = component.data

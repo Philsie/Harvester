@@ -37,6 +37,8 @@ color_reset = "\033[0m"
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode='eventlet')
 
+with open("config.json") as config_file:
+            config = json.load(config_file)
 
 @socketio.on('connect')
 def handle_connect():
@@ -59,6 +61,9 @@ def before_first_request():
 @app.route('/')
 def index():
     """main page displayed"""
+
+
+
     return render_template(
         "index.html",
         gain=cam.gain,
@@ -67,7 +72,12 @@ def index():
         expo=cam.exposure,
         info=cam_info,
         pixelformat=cam.PixelFormat,
-        available_pixelformats=np.intersect1d(cam.supported_PixelFormats,cam.ia.remote_device.node_map.PixelFormat.symbolics)
+        available_pixelformats=np.intersect1d(cam.supported_PixelFormats,cam.ia.remote_device.node_map.PixelFormat.symbolics),
+        whitebalance=cam.ia.remote_device.node_map.BalanceWhiteAuto.value,
+        available_whitebalances=cam.ia.remote_device.node_map.BalanceWhiteAuto.symbolics,
+        #Following 2 lines are way to slow for some reason
+        #cam=str(cam.cam).split("'")[1],
+        #available_Cameras=[str(device).split("'")[1] for device in cam.device_list]
     )
 
 @app.route("/info")
@@ -90,6 +100,8 @@ def cam_res():
         data = request.form
         cam.ia.stop_acquisition()
         keys = data.keys()
+        if "CameraSelect" in keys and str(data["CameraSelect"]) != "" and str(data["CameraSelect"]) != str(cam.cam).split("'")[1]:
+            cam.setup_ia(data["CameraSelect"])
         if "exposure" in keys and data["exposure"] != "":
             cam.exposure = int(float(data["exposure"]))
         if "gain" in keys and data["gain"] != "":
@@ -100,6 +112,8 @@ def cam_res():
             cam.scale[1] = int(data["height"])
         if "PixelFormat" in keys and str(data["PixelFormat"]) != "":
             cam.PixelFormat = data["PixelFormat"]
+        if "WhiteBalance" in keys and str(data["WhiteBalance"]) != "":
+            cam.ia.remote_device.node_map.BalanceWhiteAuto.value = data["WhiteBalance"]
         cam.ia.start_acquisition()
     return redirect(url_for("index"))
 
@@ -108,7 +122,7 @@ def gen_time():
     while True:
         log.info(color_magenta+"gen_time"+color_reset)
         socketio.emit("time",dt.now().strftime('%Y-%m-%d %H:%M:%S'))
-        eventlet.sleep(1)
+        eventlet.sleep(config["refresh_delay_data"])
 
 def gen_fps():
     """get time current time to display on website"""
@@ -116,22 +130,22 @@ def gen_fps():
         if "cam" in globals(): 
             log.info(color_cyan+"gen_fps"+color_reset)
             socketio.emit("fps", round(cam.ia.remote_device.node_map.AcquisitionFrameRate.value,1))
-        eventlet.sleep(1)
+        eventlet.sleep(config["refresh_delay_data"])
 
 def gen_temp():
     """get camera temperature displayable on website"""
     while True:
         if "cam" in globals(): 
             log.info(color_green+"gen_temp"+color_reset)
-            socketio.emit("temp_feed",'data: ' + f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C" + '\n\n')
-        eventlet.sleep(1)
+            socketio.emit("temp_feed",f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C" + '\n\n')
+        eventlet.sleep(config["refresh_delay_data"])
 
 def gen_frame():
     """get frame displayable on website from camera"""
     while True:
         if "cam" in globals():
             log.info(color_blue+"gen_frame"+color_reset)
-            cam.exposure = rd.randint(cam.exposure-200,cam.exposure+200)
+            #cam.exposure = rd.randint(cam.exposure-200,cam.exposure+200)
             cam.trigger()
             image_data = cam.grab()
 
@@ -145,7 +159,7 @@ def gen_frame():
             # Emit the encoded image to the client
             socketio.emit('video_feed', {'image': encoded_image})
 
-        eventlet.sleep(1)
+        eventlet.sleep(config["refresh_delay_camera"])
 
 if __name__ == '__main__':
     """Run Flask application"""

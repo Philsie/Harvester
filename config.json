@@ -1,10 +1,12 @@
 {
     "width":1280,
     "height":1024,
-    "exposure": 1500,
+    "exposure": 500,
     "gain": 0.0,
     "ctis": ["/home/philipp/ximea/package/libs/gentl/X64/ximea.gentl.cti"],
-    "skip_autoWhiteBalance_models": ["MQ013CG-E2"]
+    "skip_autoWhiteBalance_models": ["MQ013CG-E2"],
+    "refresh_delay_camera": 0.01,
+    "refresh_delay_data": 1
 
 
 }

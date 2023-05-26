@@ -51,28 +51,34 @@
   <h1>Video Streaming Demonstration</h1>
   <form action="/cam_config" method="POST">
     <div class="container">
+      <!--Exposure-->
       <div>
         <p><input type="number" name="exposure" value="{{expo}}" id="exposure"/></p>
         <label for="exposure"> Exposure </label>
       </div>
+      <!--Gain-->
       <div>
         <p><input type="number" name="gain" value="{{gain}}" id="gain"/> </p>
         <label for="gain"> Gain </label>
       </div>
+      <!--AspectRatio-->
       <div>
         <p>
           <input type="checkbox" id="aspectRatio" checked>
           <label for="aspectRatio">keep aspect ratio</label>
         </p>
       </div>
+      <!--Width-->
       <div>
         <p><input type="number" name="width" value="{{res[0]}}" id="width" onchange="keepRatioWidth()" /></p>
         <label for="width"> Width </label>
       </div>
+      <!--Height-->
       <div>
         <p><input type="number" name="height" value="{{res[1]}}" id="height" onchange="keepRatioHeight()"/></p>
         <label for="height"> Height </label>
       </div>
+      <!--PixelFormat-->
       <div>
         <p>
           <select name="PixelFormat" class="selectpicker form-control" id="pixelformat">
@@ -87,14 +93,50 @@
         </p>
         <label for="pixelformat"> PixelFormat </label>
       </div>
+      <!--WhiteBalance-->
+      <div>
+        <p>
+          <select name="WhiteBalance" class="selectpicker form-control" id="whitebalance">
+            {% for wb in available_whitebalances %}
+              {% if wb == whitebalance%}
+                <option value="{{ wb }}" selected="selected" >{{ wb }}</option>
+              {% else %}
+              <option value="{{ wb }}" >{{ wb }}</option>
+              {%endif%}
+            {% endfor %}                                              
+          </select><br>
+        </p>
+        <label for="whitebalance"> WhiteBalance </label>
+      </div>
+      <!--CameraSelect-->
+      <!--
+      <div>
+        <p>
+          <select name="CameraSelect" class="selectpicker form-control" id="cameraselect">
+            {% for cam in available_Cameras %}
+              {% if cam == camera%}
+                <option value="{{ cam }}" selected="selected" >{{ cam }}</option>
+              {% else %}
+              <option value="{{ cam }}" >{{ cam }}</option>
+              {%endif%}
+            {% endfor %}                                              
+          </select><br>
+        </p>
+        <label for="cameraselect"> Camera Selector </label>
+      </div>
+      -->
+      <!--Submit-->
       <div><p><input type="submit" value="Submit" /></p></div>
       
     </div>
     
   </form>
-  <pre id="temp_feed"></pre><br>
-  <pre id="time"></pre><br>
-  <pre id="fps"></pre><br>
+  <div class="container">
+    <div><p id="temp_feed"></p></div>
+    
+    <div><p id="time"></p></div>
+    <div><p id="fps"></p></div>
+  </div>
   <img id="cam" src="" alt="Camera Stream"><br>
   <div id="footer">
     <p><a href="{{ url_for('index') }}"><button>REFRESH</button></a></p>
