@@ -11,7 +11,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 import time
 
-
 ##check temp sensor location + get/set 
 #ref ximea.py --> get_temperature
 
@@ -21,8 +20,7 @@ logging.basicConfig(
     format="%(asctime)s.%(msecs)d [%(levelname)s]: %(filename)s:%(lineno)d: %(message)s",
     datefmt="%T",
     filename="app_WIP.log",
-    level=logging.DEBUG
-    ,
+    level=logging.INFO
 )
 
 log.info(".\n"*25)
@@ -39,6 +37,10 @@ class GenICam:
 
         with open("config.json") as config_file:
             self.config = json.load(config_file)
+
+        if self.config["loglevel"].upper() == "DEBUG":
+            log.setLevel = logging.DEBUG
+
         log.info("Config loaded")
 
         self.cam = None
@@ -53,66 +55,60 @@ class GenICam:
 
         self.scale = None
 
-        self.device_list = copy.copy(self.Harvester.device_info_list)
+        self.device_list = self.Harvester.device_info_list
+
+        self.ia_dict = {}
+        for device in self.device_list:
+                self.ia_dict[str(device).split("'")[1]] = self.Harvester.create_image_acquirer(
+                self.device_list.index(device)
+            )
+
+        self.ia_id = list(self.ia_dict.keys())[0]
+        self.ia = self.ia_dict[self.ia_id]
+        self.change_ia(self.ia_id)
+        
+
+        
 
         if len(self.Harvester.device_info_list) > 0:
             self.setup_ia()
 
         #%%start of node listing
-        log.debug("Start Logging attributes")
-        for name in dir(self.ia.remote_device.node_map):
-            if not name[0].isupper() or True:
-                info = ""
-                value = ""
-                try:
-                    node = getattr(self.ia.remote_device.node_map, name)
-                    if hasattr(node, "value"):
-                        value = node.value
-                    if hasattr(node, "symbolics"):
-                        info += f"    {node.symbolics}"
-                    if hasattr(node, "execute"):
-                        info += f"     \033[92m*EXECUTABLE*\033[0m"
-                except:
-                    pass
-                log.debug(f"{name}={value}{info}")
-        
-        log.debug("Stop Logging attributes")
+        if log.getEffectiveLevel() == logging.DEBUG:
+            log.debug("Start Logging attributes")
+            for name in dir(self.ia.remote_device.node_map):
+                if not name[0].isupper() or True:
+                    info = ""
+                    value = ""
+                    try:
+                        node = getattr(self.ia.remote_device.node_map, name)
+                        if hasattr(node, "value"):
+                            value = node.value
+                        if hasattr(node, "symbolics"):
+                            info += f"    {node.symbolics}"
+                        if hasattr(node, "execute"):
+                            info += f"     \033[92m*EXECUTABLE*\033[0m"
+                    except:
+                        pass
+                    log.debug(f"{name}={value}{info}")
+            
+            log.debug("Stop Logging attributes")
         #%%end of node listing
         log.info("Init Done: GenICam")
 
-    def setup_ia(self,id = None):
+    def change_ia(self,id):
+        if id in list(self.ia_dict.keys()) and id != self.ia_id:
+            if self.ia != None:
+                self.ia.stop_acquisition()
+            self.ia = self.ia_dict[id]
+            self.ia.start_acquisition()
+            self.setup_ia()
+            
+            self.ia_id = id
 
+    def setup_ia(self):
 
-        if self.cam is not None and id == str(self.cam).split("'")[1]:
-            return
-
-        def select_by_id(id):
-            #id = "MQ013CG-E2 (38205351)"
-            for device in self.Harvester.device_info_list:
-                log.info(str(device).split("'")[1])
-                if str(device).split("'")[1] == id:
-                    return device
-            return None
-        
-        device = select_by_id(id)
-
-        if id is not None and device is not None:
-            self.ia = self.Harvester.create_image_acquirer(
-                self.Harvester.device_info_list.index(device)
-            )
-            self.cam=self.Harvester.device_info_list.index(device)
-        else:
-            self.ia = self.Harvester.create_image_acquirer(
-                0
-            )
-            self.cam = self.Harvester.device_info_list[0]
-
-        print(self.ia)
-  
-        log.info(self.Harvester.device_info_list)
         self.PixelFormat = "BGR8"
-        log.info(self.ia.remote_device.node_map.PixelFormat.symbolics)
-        print("Pre Checkpoint")
         self.width = self.config["width"]
         self.height = self.config["height"]
         self.exposure = self.config["exposure"]
@@ -127,7 +123,6 @@ class GenICam:
         self.ia.start_image_acquisition()
         self.trigger()
         self.grab()
-        print("Post Checkpoint")
         log.info("Image-Acquirer created")
 
     #%% GenICam properties

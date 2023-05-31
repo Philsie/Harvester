@@ -9,7 +9,7 @@ from time import sleep
 import asyncio
 
 import base64
-
+import copy
 from datetime import datetime as dt
 
 from flask import Flask, Response, flash, render_template, request, send_file, redirect, url_for
@@ -49,12 +49,15 @@ def handle_connect():
 
 @app.before_first_request
 def before_first_request():
-    """code run before loading first page"""
+    """code run before loading Main page"""
     print("Start: before_first_request")
+
     global cam
     global cam_info
+
     cam = GenICam()
     cam_info = f"<p>{cam.info()}</p>"
+
     print("Cam: ", cam)
     print("END: before_first_request")
 
@@ -62,7 +65,11 @@ def before_first_request():
 def index():
     """main page displayed"""
 
-
+    wb = "NONE"
+    a_wb = []
+    if cam.PixelFormat == "BGR8":
+        wb = cam.ia.remote_device.node_map.BalanceWhiteAuto.value
+        a_wb = cam.ia.remote_device.node_map.BalanceWhiteAuto.symbolics
 
     return render_template(
         "index.html",
@@ -70,20 +77,14 @@ def index():
         res=cam.scale,
         cur_res=cam.scale,
         expo=cam.exposure,
-        info=cam_info,
+        info=f"<p>{cam.ia.remote_device.node_map.DeviceVendorName.value} - {cam.ia_id}</p>", 
         pixelformat=cam.PixelFormat,
         available_pixelformats=np.intersect1d(cam.supported_PixelFormats,cam.ia.remote_device.node_map.PixelFormat.symbolics),
-        whitebalance=cam.ia.remote_device.node_map.BalanceWhiteAuto.value,
-        available_whitebalances=cam.ia.remote_device.node_map.BalanceWhiteAuto.symbolics,
-        #Following 2 lines are way to slow for some reason
-        #cam=str(cam.cam).split("'")[1],
-        #available_Cameras=[str(device).split("'")[1] for device in cam.device_list]
+        whitebalance=wb,
+        available_whitebalances=a_wb,
+        camera=cam.ia_id,
+        available_Cameras=list(cam.ia_dict.keys())
     )
-
-@app.route("/info")
-def info():
-    """url for retreaving information on camera"""
-    return f"{cam.info()}"
 
 @app.route("/download")
 def download():
@@ -99,9 +100,9 @@ def cam_res():
     if request.method == "POST":
         data = request.form
         cam.ia.stop_acquisition()
-        keys = data.keys()
-        if "CameraSelect" in keys and str(data["CameraSelect"]) != "" and str(data["CameraSelect"]) != str(cam.cam).split("'")[1]:
-            cam.setup_ia(data["CameraSelect"])
+        keys = list(data.keys())
+        if "CameraSelect" in keys and str(data["CameraSelect"]) != "":
+            cam.change_ia(data["CameraSelect"])
         if "exposure" in keys and data["exposure"] != "":
             cam.exposure = int(float(data["exposure"]))
         if "gain" in keys and data["gain"] != "":
@@ -146,22 +147,26 @@ def gen_frame():
         if "cam" in globals():
             log.info(color_blue+"gen_frame"+color_reset)
             #cam.exposure = rd.randint(cam.exposure-200,cam.exposure+200)
-            cam.trigger()
-            image_data = cam.grab()
+            try:
+                cam.trigger()
+                image_data = cam.grab()
 
-            img_byte_arr = io.BytesIO()
-            img = Image.fromarray(image_data)
-            img = img.resize((int(cam.scale[0]), int(cam.scale[1])))
-            img.save(img_byte_arr, format="JPEG")
+                img_byte_arr = io.BytesIO()
+                img = Image.fromarray(image_data)
+                img = img.resize((int(cam.scale[0]), int(cam.scale[1])))
+                img.save(img_byte_arr, format="JPEG")
 
-            encoded_image = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+                encoded_image = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
 
-            # Emit the encoded image to the client
-            socketio.emit('video_feed', {'image': encoded_image})
+                # Emit the encoded image to the client
+                socketio.emit('video_feed', {'image': encoded_image})
+            except:
+                pass
 
         eventlet.sleep(config["refresh_delay_camera"])
 
 if __name__ == '__main__':
     """Run Flask application"""
     #app.run(host="0.0.0.0", port=5050, debug=True, threaded=True)
+
     socketio.run(app,host="0.0.0.0", port=5050, debug=True)

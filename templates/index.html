@@ -17,11 +17,13 @@
     } ;
   }
   </script>
+  <script src="//code.jquery.com/jquery-1.11.1.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
   <script type="text/javascript">
       var socket = io.connect();
       socket.on('connect', function() {
           console.log('Connected to server');
+          socket.emit("settings","data")
       });
       socket.on('temp_feed', function(data) {
           console.log('Received data from temp_feed: ', data);
@@ -44,12 +46,12 @@
           document.getElementById('fps').innerHTML = "current fps: " +data;;
       });
   </script>
-
 </head>
 
 <body>
+  <script>var socket = io.connect();socket.emit("settings","formDataDict");</script>
   <h1>Video Streaming Demonstration</h1>
-  <form action="/cam_config" method="POST">
+  <form action="/cam_config" method="POST" id="form">
     <div class="container">
       <!--Exposure-->
       <div>
@@ -97,19 +99,20 @@
       <div>
         <p>
           <select name="WhiteBalance" class="selectpicker form-control" id="whitebalance">
-            {% for wb in available_whitebalances %}
-              {% if wb == whitebalance%}
-                <option value="{{ wb }}" selected="selected" >{{ wb }}</option>
-              {% else %}
-              <option value="{{ wb }}" >{{ wb }}</option>
-              {%endif%}
-            {% endfor %}                                              
+          
+              {% for wb in available_whitebalances %}
+                {% if wb == whitebalance%}
+                  <option value="{{ wb }}" selected="selected" >{{ wb }}</option>
+                {% else %}
+                <option value="{{ wb }}" >{{ wb }}</option>
+                {%endif%}
+              {% endfor %}                                          
           </select><br>
         </p>
         <label for="whitebalance"> WhiteBalance </label>
       </div>
       <!--CameraSelect-->
-      <!--
+
       <div>
         <p>
           <select name="CameraSelect" class="selectpicker form-control" id="cameraselect">
@@ -124,7 +127,7 @@
         </p>
         <label for="cameraselect"> Camera Selector </label>
       </div>
-      -->
+
       <!--Submit-->
       <div><p><input type="submit" value="Submit" /></p></div>
       
@@ -142,7 +145,9 @@
     <p><a href="{{ url_for('index') }}"><button>REFRESH</button></a></p>
     <p><a href="{{ url_for('download') }}"><button>Download Image</button></a></p>
   </div>
-  <div id="footer"><p>{{info|safe}} </p></div>
+  <div id="footer">
+    {{info|safe}}
+  </div>
 
 </body>
 </html
