@@ -54,6 +54,7 @@ class GenICam:
         log.info("ctis loaded")
 
         self.scale = None
+        self.ia_id = None
 
         self.device_list = self.Harvester.device_info_list
 
@@ -63,12 +64,9 @@ class GenICam:
                 self.device_list.index(device)
             )
 
-        self.ia_id = list(self.ia_dict.keys())[0]
-        self.ia = self.ia_dict[self.ia_id]
-        self.change_ia(self.ia_id)
-        
-
-        
+        for id in list(self.ia_dict.keys()):
+            self.change_ia(id)
+            self.setup_ia()
 
         if len(self.Harvester.device_info_list) > 0:
             self.setup_ia()
@@ -98,23 +96,19 @@ class GenICam:
 
     def change_ia(self,id):
         if id in list(self.ia_dict.keys()) and id != self.ia_id:
-            if self.ia != None:
-                self.ia.stop_acquisition()
             self.ia = self.ia_dict[id]
-            self.ia.start_acquisition()
             self.setup_ia()
-            
             self.ia_id = id
 
     def setup_ia(self):
+
+        self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
 
         self.PixelFormat = "BGR8"
         self.width = self.config["width"]
         self.height = self.config["height"]
         self.exposure = self.config["exposure"]
         self.gain = self.config["gain"]
-
-        self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
 
         self.ia.stop_image_acquisition()
         self.ia.remote_device.node_map.TriggerMode.value = "On"
@@ -123,7 +117,6 @@ class GenICam:
         self.ia.start_image_acquisition()
         self.trigger()
         self.grab()
-        log.info("Image-Acquirer created")
 
     #%% GenICam properties
     @property

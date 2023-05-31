@@ -101,8 +101,7 @@ def cam_res():
         data = request.form
         cam.ia.stop_acquisition()
         keys = list(data.keys())
-        if "CameraSelect" in keys and str(data["CameraSelect"]) != "":
-            cam.change_ia(data["CameraSelect"])
+        
         if "exposure" in keys and data["exposure"] != "":
             cam.exposure = int(float(data["exposure"]))
         if "gain" in keys and data["gain"] != "":
@@ -115,6 +114,8 @@ def cam_res():
             cam.PixelFormat = data["PixelFormat"]
         if "WhiteBalance" in keys and str(data["WhiteBalance"]) != "":
             cam.ia.remote_device.node_map.BalanceWhiteAuto.value = data["WhiteBalance"]
+        if "CameraSelect" in keys and str(data["CameraSelect"]) != "":
+            cam.change_ia(data["CameraSelect"])
         cam.ia.start_acquisition()
     return redirect(url_for("index"))
 
