@@ -4,18 +4,30 @@
   <title>Video Streaming Demonstration</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='stylesheets/index.css') }}">
   <script>
-    function keepRatioWidth() {
+    function sendScale(cam) {
+      width = document.getElementById("width"+cam);
+      height = document.getElementById("height"+cam)
+      sendToBackend(([cam,'height',height.value]))
+      sendToBackend(([cam,'width',width.value]))
+    }
+
+    function keepRatioWidth(cam) {
+      width = document.getElementById("width"+cam);
+      height = document.getElementById("height"+cam)
       if (document.getElementById("aspectRatio").checked) {
-        document.getElementById("height").value = Math.round(parseFloat((document.getElementById("width").value * {{ res[1]}}) /{{res[0]}}))
+        document.getElementById("height"+cam).value = Math.round(parseFloat((document.getElementById("width"+cam).value * {{ res[1]}}) /{{res[0]}}));
+        sendScale(cam)
     } ;
-  }
-  </script>
-  <script>
-  function keepRatioHeight() {
+  };
+
+  function keepRatioHeight(cam) {
+      width = document.getElementById("width"+cam);
+      height = document.getElementById("height"+cam)
       if (document.getElementById("aspectRatio").checked) {
-        document.getElementById("width").value = Math.round(parseFloat((document.getElementById("height").value * {{ res[0]}}) /{{res[1]}}))
-    } ;
-  }
+        document.getElementById("width"+cam).value = Math.round(parseFloat((document.getElementById("height"+cam).value * {{ res[0]}}) /{{res[1]}}));
+        sendScale(cam)
+    };
+  };
   </script>
   <script src="//code.jquery.com/jquery-1.11.1.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
@@ -25,6 +37,9 @@
           console.log('Connected to server');
           socket.emit("settings","data")
       });
+      socket.on("Displays", function() {
+
+      });
       socket.on('temp_feed', function(data) {
           console.log('Received data from temp_feed: ', data);
           // Update the website with the received data
@@ -33,7 +48,7 @@
       socket.on('video_feed', function(data) {
           console.log('Received data from video_feed: ', data);
           // Update the website with the received data
-          document.getElementById('cam').src = 'data:image/jpeg;base64,' + data.image;;
+          document.getElementById(data.id).src = 'data:image/jpeg;base64,' + data.image;;
       });
       socket.on('time', function(data) {
           console.log('Received data from time: ', data);
@@ -45,109 +60,100 @@
           // Update the website with the received data
           document.getElementById('fps').innerHTML = "current fps: " +data;;
       });
+      function sendToBackend(data) {
+        socket.emit("cam_config",data)
+      }
   </script>
 </head>
 
 <body>
-  <script>var socket = io.connect();socket.emit("settings","formDataDict");</script>
+  
   <h1>Video Streaming Demonstration</h1>
-  <form action="/cam_config" method="POST" id="form">
-    <div class="container">
-      <!--Exposure-->
-      <div>
-        <p><input type="number" name="exposure" value="{{expo}}" id="exposure"/></p>
-        <label for="exposure"> Exposure </label>
-      </div>
-      <!--Gain-->
-      <div>
-        <p><input type="number" name="gain" value="{{gain}}" id="gain"/> </p>
-        <label for="gain"> Gain </label>
-      </div>
-      <!--AspectRatio-->
-      <div>
-        <p>
-          <input type="checkbox" id="aspectRatio" checked>
-          <label for="aspectRatio">keep aspect ratio</label>
-        </p>
-      </div>
-      <!--Width-->
-      <div>
-        <p><input type="number" name="width" value="{{res[0]}}" id="width" onchange="keepRatioWidth()" /></p>
-        <label for="width"> Width </label>
-      </div>
-      <!--Height-->
-      <div>
-        <p><input type="number" name="height" value="{{res[1]}}" id="height" onchange="keepRatioHeight()"/></p>
-        <label for="height"> Height </label>
-      </div>
-      <!--PixelFormat-->
-      <div>
-        <p>
-          <select name="PixelFormat" class="selectpicker form-control" id="pixelformat">
-            {% for pf in available_pixelformats %}
-              {% if pf == pixelformat%}
-                <option value="{{ pf }}" selected="selected" >{{ pf }}</option>
-              {% else %}
-              <option value="{{ pf }}" >{{ pf }}</option>
-              {%endif%}
-            {% endfor %}                                              
-          </select><br>
-        </p>
-        <label for="pixelformat"> PixelFormat </label>
-      </div>
-      <!--WhiteBalance-->
-      <div>
-        <p>
-          <select name="WhiteBalance" class="selectpicker form-control" id="whitebalance">
-          
-              {% for wb in available_whitebalances %}
-                {% if wb == whitebalance%}
-                  <option value="{{ wb }}" selected="selected" >{{ wb }}</option>
+  {% for cam in available_Cameras %}
+      <div class="container">
+        <!--Exposure-->
+        <div>
+          <p><input type="number" name="exposure" value="{{expo}}" id="exposure" step="100" oninput="sendToBackend(['{{cam}}','exposure',value])" onchange="sendToBackend(['{{cam}}','exposure',value])"/></p>
+          <label for="exposure"> Exposure </label>
+        </div>
+        <!--Gain-->
+        <div>
+          <p><input type="number" name="gain" value="{{gain}}" id="gain" step="1" oninput="sendToBackend(['{{cam}}','gain',value])" onchange="sendToBackend(['{{cam}}','gain',value])"/> </p>
+          <label for="gain"> Gain </label>
+        </div>
+        <!--AspectRatio-->
+        <div>
+          <p>
+            <input type="checkbox" id="aspectRatio" checked>
+            <label for="aspectRatio">keep aspect ratio</label>
+          </p>
+        </div>
+        <!--Width-->
+        <div>
+          <p><input type="number" name="width" value="{{res[0]}}" id="width{{cam}}" onchange="keepRatioWidth('{{cam}}')" step="1" /></p>
+          <label for="width{{cam}}"> Width </label>
+        </div>
+        <!--Height-->
+        <div>
+          <p><input type="number" name="height" value="{{res[1]}}" id="height{{cam}}" onchange="keepRatioHeight('{{cam}}')" step="1"/></p>
+          <label for="height{{cam}}"> Height </label>
+        </div>
+        <!--PixelFormat-->
+        <div>
+          <script>
+            function changePixelformat(data) {
+              sendToBackend(data)
+              Whitebalance = document.getElementById("whitebalance_div_"+cam)
+              if (data[2]=="Mono8") {
+                Whitebalance.style.display = "none"
+              } else if (data[2] == "BGR8") {
+                Whitebalance.style.display = "block"
+              }
+            }
+          </script>
+          <p>
+            <select name="PixelFormat" class="selectpicker form-control" id="pixelformat" onchange="changePixelformat(['{{cam}}','pixelformat',value])">
+              {% for pf in available_pixelformats %}
+                {% if pf == pixelformat%}
+                  <option value="{{ pf }}" selected="selected" >{{ pf }}</option>
                 {% else %}
-                <option value="{{ wb }}" >{{ wb }}</option>
+                <option value="{{ pf }}" >{{ pf }}</option>
                 {%endif%}
-              {% endfor %}                                          
-          </select><br>
-        </p>
-        <label for="whitebalance"> WhiteBalance </label>
+              {% endfor %}                                              
+            </select><br>
+          </p>
+          <label for="pixelformat"> PixelFormat </label>
+        </div>
+        <!--WhiteBalance-->
+        <div id="whitebalance_div_{{cam}}">
+          <p>
+            <select name="WhiteBalance" class="selectpicker form-control" id="whitebalance" onchange="sendToBackend(['{{cam}}','whitebalance',value])">
+            
+                {% for wb in available_whitebalances %}
+                  {% if wb == whitebalance%}
+                    <option value="{{ wb }}" selected="selected" >{{ wb }}</option>
+                  {% else %}
+                  <option value="{{ wb }}" >{{ wb }}</option>
+                  {%endif%}
+                {% endfor %}                                          
+            </select><br>
+          </p>
+          <label for="whitebalance"> WhiteBalance </label>
+        </div>
       </div>
-      <!--CameraSelect-->
 
-      <div>
-        <p>
-          <select name="CameraSelect" class="selectpicker form-control" id="cameraselect">
-            {% for cam in available_Cameras %}
-              {% if cam == camera%}
-                <option value="{{ cam }}" selected="selected" >{{ cam }}</option>
-              {% else %}
-              <option value="{{ cam }}" >{{ cam }}</option>
-              {%endif%}
-            {% endfor %}                                              
-          </select><br>
-        </p>
-        <label for="cameraselect"> Camera Selector </label>
-      </div>
-
-      <!--Submit-->
-      <div><p><input type="submit" value="Submit" /></p></div>
-      
+    <div class="container">
+      <div><p id="temp_feed"></p></div>
+      <div><p id="time"></p></div>
+      <div><p id="fps"></p></div>
     </div>
-    
-  </form>
-  <div class="container">
-    <div><p id="temp_feed"></p></div>
-    
-    <div><p id="time"></p></div>
-    <div><p id="fps"></p></div>
-  </div>
-  <img id="cam" src="" alt="Camera Stream"><br>
-  <div id="footer">
-    <p><a href="{{ url_for('index') }}"><button>REFRESH</button></a></p>
-    <p><a href="{{ url_for('download') }}"><button>Download Image</button></a></p>
-  </div>
-  <div id="footer">
-    {{info|safe}}
-  </div>
 
+    <div id = cam_container>
+      <img id="{{cam}}" src="" alt="Camera Stream"><br>
+      <div id="footer">
+        <p>{{cam}}</p>
+      </div>
+    </div>
+  {% endfor %}
 </body>
 </html

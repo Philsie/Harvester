@@ -1,30 +1,37 @@
+import copy
 import io
 import json
 import logging
-import os
+import logging.handlers as handlers
+import time
 from datetime import datetime as dt
-import copy
+from logging.handlers import RotatingFileHandler
 
 import numpy as np
 from harvesters.core import Harvester
 from PIL import Image, ImageDraw, ImageFont
 
-import time
-
-##check temp sensor location + get/set 
-#ref ximea.py --> get_temperature
-
 log = logging.getLogger(__name__)
 
 logging.basicConfig(
-    format="%(asctime)s.%(msecs)d [%(levelname)s]: %(filename)s:%(lineno)d: %(message)s",
+    format="%(asctime)s [%(levelname)s]: %(filename)s:%(lineno)d: %(message)s",
     datefmt="%T",
-    filename="app_WIP.log",
+    filename="logs/app.log",
     level=logging.INFO
 )
 
-log.info(".\n"*25)
-log.info("Start of Log - "+str(dt.now()))
+# Create a rotating file handler
+log_file = "app.log"
+max_file_size = 1024  # 100*1024*1024  # Size in bytes
+handler = RotatingFileHandler(log_file, maxBytes=max_file_size)
+handler.setLevel(logging.DEBUG)
+
+# Set the log format
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+# Add the handler to the logger
+log.addHandler(handler)
 
 
 class GenICam:
@@ -40,7 +47,6 @@ class GenICam:
 
         if self.config["loglevel"].upper() == "DEBUG":
             log.setLevel = logging.DEBUG
-
         log.info("Config loaded")
 
         self.cam = None
@@ -50,58 +56,42 @@ class GenICam:
 
         for path in self.config["ctis"]:
             self.Harvester.add_file(path)
-            self.Harvester.update()
+        self.Harvester.update()
         log.info("ctis loaded")
 
-        self.scale = None
+        log.info(self.Harvester.device_info_list)
+
         self.ia_id = None
+        self.device_list = (
+            self.Harvester.device_info_list
+        )  # might be unnecessary needs testing on performance
 
-        self.device_list = self.Harvester.device_info_list
-
+        # dict of all image acquirer with
+        # key: id of camera --> eg: MQ013CG-E2 (38205351)
+        # value: ImageAcquirer Object
         self.ia_dict = {}
         for device in self.device_list:
                 self.ia_dict[str(device).split("'")[1]] = self.Harvester.create_image_acquirer(
                 self.device_list.index(device)
             )
 
+        # initial setup of all ImageAcquirers
         for id in list(self.ia_dict.keys()):
-            self.change_ia(id)
-            self.setup_ia()
+            self.change_ia(id, setup=True)
 
-        if len(self.Harvester.device_info_list) > 0:
-            self.setup_ia()
-
-        #%%start of node listing
-        if log.getEffectiveLevel() == logging.DEBUG:
-            log.debug("Start Logging attributes")
-            for name in dir(self.ia.remote_device.node_map):
-                if not name[0].isupper() or True:
-                    info = ""
-                    value = ""
-                    try:
-                        node = getattr(self.ia.remote_device.node_map, name)
-                        if hasattr(node, "value"):
-                            value = node.value
-                        if hasattr(node, "symbolics"):
-                            info += f"    {node.symbolics}"
-                        if hasattr(node, "execute"):
-                            info += f"     \033[92m*EXECUTABLE*\033[0m"
-                    except:
-                        pass
-                    log.debug(f"{name}={value}{info}")
-            
-            log.debug("Stop Logging attributes")
-        #%%end of node listing
         log.info("Init Done: GenICam")
 
-    def change_ia(self,id):
+    def change_ia(self, id, setup=False):
+        """change the used Image Acquirer to a new one based on provided Id"""
         if id in list(self.ia_dict.keys()) and id != self.ia_id:
             self.ia = self.ia_dict[id]
-            self.setup_ia()
+            if setup:
+                self.setup_ia()
+            log.info(f"changed ImageAcquirer from {self.ia_id} to {id}")
             self.ia_id = id
 
     def setup_ia(self):
-
+        # configure current ImageAcquirer based on config and default values
         self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
 
         self.PixelFormat = "BGR8"
@@ -115,6 +105,7 @@ class GenICam:
         self.ia.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
         self.ia.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
         self.ia.start_image_acquisition()
+
         self.trigger()
         self.grab()
 
@@ -162,7 +153,8 @@ class GenICam:
 
     @gain.setter
     def gain(self, g):
-        if g >= 0 and isinstance(g, float):
+        log.warning(str(g) + " " + str(type(g)))
+        if g >= 0 and type(g) == float:
             self.ia.remote_device.node_map.Gain.value = g
         else:
             log.warning(f"Invalid input for gain.setter: {g}, {type(g)}")
@@ -174,31 +166,31 @@ class GenICam:
 
     @PixelFormat.setter
     def PixelFormat(self, pf):
-        if isinstance(pf, str) and pf in np.intersect1d(
-            self.supported_PixelFormats,
-            self.ia.remote_device.node_map.PixelFormat.symbolics,
-        ):
-            self.ia.remote_device.node_map.PixelFormat.value = pf
-        else:
-            log.warning(f"Invalid input for PixelFormat.setter: {pf}, {type(pf)}")
+        try:
+            if isinstance(pf, str) and pf in np.intersect1d(
+                self.supported_PixelFormats,
+                self.ia.remote_device.node_map.PixelFormat.symbolics,
+            ):
+                self.ia.remote_device.node_map.PixelFormat.value = pf
+            else:
+                log.warning(f"Invalid input for PixelFormat.setter: {pf}, {type(pf)}")
+        except Exception as e:
+            log.error(str(e))
 
     #%% GenICam functions
 
     def trigger(self):
         """Make the camera take a picture"""
-        log.info("GenICam.trigger")
+        log.debug("GenICam.trigger")
         self.ia.remote_device.node_map.TriggerSoftware.execute()
 
-    def grab(self, save = False):
-        """Return the image taken as a list
-        """
-        log.info("GenICam.grab")
+    def grab(self, save=False):
+        """Return the image taken as a list of pixel Values"""
+        log.debug("GenICam.grab")
         time = dt.now()
         with self.ia.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
             component_data = component.data
-            if self.scale is None:
-                self.scale = [component.width,component.height]
             if self.PixelFormat == "BGR8":
                 image_data = copy.copy(component_data.reshape(self.height, self.width, 3)[
                     :, :, ::-1
@@ -206,13 +198,9 @@ class GenICam:
             else:
                 image_data = copy.copy(component_data.reshape(self.height, self.width))
             
-        #log.info(image_data)
         if save:
+            # if specified save image to file
             img = Image.fromarray(image_data)
             img.save("cam_download.png")
 
         return image_data
-
-    def info(self):
-        """Return camera information"""
-        return str(self.cam)

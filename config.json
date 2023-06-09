@@ -5,10 +5,15 @@
     "height":1024,
     "exposure": 500,
     "gain": 0.0,
-    "ctis": ["/home/philipp/ximea/package/libs/gentl/X64/ximea.gentl.cti"],
-    "refresh_delay_camera": 0.01,
+    "ctis": ["/home/philipp/ximea/package/libs/gentl/X64/ximea.gentl.cti","src/experiments-and-tutorials/Python/daheng-camera-hello/Galaxy_Linux-x86_Gige-U3_32bits-64bits_1.3.2206.9161/Galaxy_camera/lib/x86_64/GxGVTL.cti","src/experiments-and-tutorials/Python/daheng-camera-hello/Galaxy_Linux-x86_Gige-U3_32bits-64bits_1.3.2206.9161/Galaxy_camera/lib/x86_64/GxU3VTL.cti"],
+    "refresh_delay_camera": 0.05,
     "refresh_delay_data": 1,
 
     "comment-loglevel": "loglevel should be 'info' or 'debug'" ,
-    "loglevel": "debug"
+    "loglevel": "debug",
+
+    "logEventlet": "True",
+
+    "comment-logSignOfLife": "log a sign of Life every x seconds, set to 0 to turn off",
+    "logSignOfLife": 2
 }
