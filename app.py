@@ -109,7 +109,7 @@ def index():
         gain=cam.gain,
         res=list(scales.values())[0],
         #cur_res=cam.scale,
-        expo=cam.exposure,
+        expo=int(cam.exposure),
         info=f"<p>{cam.ia.remote_device.node_map.DeviceVendorName.value} - {cam.ia_id}</p>",
         pixelformat=cam.PixelFormat,
         available_pixelformats=np.intersect1d(
@@ -209,7 +209,12 @@ def gen_frame():
                     socketio.emit(
                         "video_feed", {"image": encoded_image, "id": cam.ia_id}
                     )
-
+                    socketio.emit(
+                    "temp_feed", {
+                    "temp" : f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C"
+                    + "\n\n",
+                    "id": cam.ia_id}
+            )
                 except Exception as e:
                     log.warning(color_red + "Getting Frame Failed" + color_reset)
                     log.warning(color_yellow + str(e) + color_reset)

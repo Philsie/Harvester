@@ -55,11 +55,11 @@ class GenICam:
         log.info("Harvester created")
 
         for path in self.config["ctis"]:
+            log.info(path)
             self.Harvester.add_file(path)
+        log.info(self.Harvester.files)
         self.Harvester.update()
         log.info("ctis loaded")
-
-        log.info(self.Harvester.device_info_list)
 
         self.ia_id = None
         self.device_list = (
@@ -71,9 +71,13 @@ class GenICam:
         # value: ImageAcquirer Object
         self.ia_dict = {}
         for device in self.device_list:
+            log.info(str(device))
+            try:
                 self.ia_dict[str(device).split("'")[1]] = self.Harvester.create_image_acquirer(
-                self.device_list.index(device)
-            )
+                self.device_list.index(device))
+            except:
+                log.warning(f"could not creare Image-Acquirer for {device}")
+                
 
         # initial setup of all ImageAcquirers
         for id in list(self.ia_dict.keys()):
@@ -142,7 +146,10 @@ class GenICam:
     @exposure.setter
     def exposure(self, e):
         if e > 0 and isinstance(e, int):
-            self.ia.remote_device.node_map.ExposureTime.value = e
+            try:
+                self.ia.remote_device.node_map.ExposureTime.value = e
+            except Exception as e:
+                log.warning(str(e))
         else:
             log.warning(f"Invalid input for exposure.setter: {e}, {type(e)}")
 
@@ -153,7 +160,7 @@ class GenICam:
 
     @gain.setter
     def gain(self, g):
-        log.warning(str(g) + " " + str(type(g)))
+        log.warning("Gain: " + str(g) + " " + str(type(g)))
         if g >= 0 and type(g) == float:
             self.ia.remote_device.node_map.Gain.value = g
         else:

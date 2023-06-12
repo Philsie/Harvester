@@ -5,7 +5,11 @@
     "height":1024,
     "exposure": 500,
     "gain": 0.0,
-    "ctis": ["/home/philipp/ximea/package/libs/gentl/X64/ximea.gentl.cti","src/experiments-and-tutorials/Python/daheng-camera-hello/Galaxy_Linux-x86_Gige-U3_32bits-64bits_1.3.2206.9161/Galaxy_camera/lib/x86_64/GxGVTL.cti","src/experiments-and-tutorials/Python/daheng-camera-hello/Galaxy_Linux-x86_Gige-U3_32bits-64bits_1.3.2206.9161/Galaxy_camera/lib/x86_64/GxU3VTL.cti"],
+    "ctis": [
+            "./cti/ximea.gentl.cti",
+	    "./cti/ids_u3vgentl.cti",
+	    "./cti/VimbaUSBTL.cti"
+    ],
     "refresh_delay_camera": 0.05,
     "refresh_delay_data": 1,
 

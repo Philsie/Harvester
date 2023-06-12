@@ -43,7 +43,7 @@
       socket.on('temp_feed', function(data) {
           console.log('Received data from temp_feed: ', data);
           // Update the website with the received data
-          document.getElementById('temp_feed').innerHTML = "current temperature: "+data;
+          document.getElementById('temp_feed-'+data.id).innerHTML = "current temperature: "+data.temp;
       });
       socket.on('video_feed', function(data) {
           console.log('Received data from video_feed: ', data);
@@ -53,7 +53,7 @@
       socket.on('time', function(data) {
           console.log('Received data from time: ', data);
           // Update the website with the received data
-          document.getElementById('time').innerHTML = "current time: "+data;;
+          document.getElementById('time'+data).innerHTML = "current time: "+data;;
       });
       socket.on('fps', function(data) {
           console.log('Received data from fps: ', data);
@@ -90,12 +90,12 @@
         </div>
         <!--Width-->
         <div>
-          <p><input type="number" name="width" value="{{res[0]}}" id="width{{cam}}" onchange="keepRatioWidth('{{cam}}')" step="1" /></p>
+          <p><input type="number" name="width" value="{{res[0]}}" id="width{{cam}}" step="10" onchange="keepRatioWidth('{{cam}}')" step="1" /></p>
           <label for="width{{cam}}"> Width </label>
         </div>
         <!--Height-->
         <div>
-          <p><input type="number" name="height" value="{{res[1]}}" id="height{{cam}}" onchange="keepRatioHeight('{{cam}}')" step="1"/></p>
+          <p><input type="number" name="height" value="{{res[1]}}" id="height{{cam}}" step="10" onchange="keepRatioHeight('{{cam}}')" step="1"/></p>
           <label for="height{{cam}}"> Height </label>
         </div>
         <!--PixelFormat-->
@@ -103,7 +103,7 @@
           <script>
             function changePixelformat(data) {
               sendToBackend(data)
-              Whitebalance = document.getElementById("whitebalance_div_"+cam)
+              Whitebalance = document.getElementById("whitebalance_div_"+data[0])
               if (data[2]=="Mono8") {
                 Whitebalance.style.display = "none"
               } else if (data[2] == "BGR8") {
@@ -143,7 +143,7 @@
       </div>
 
     <div class="container">
-      <div><p id="temp_feed"></p></div>
+      <div><p id="temp_feed-{{cam}}"></p></div>
       <div><p id="time"></p></div>
       <div><p id="fps"></p></div>
     </div>
