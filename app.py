@@ -84,10 +84,8 @@ def before_first_request():
     for id in list(cam.ia_dict.keys()):
         scales[id] = [1280, 1024]
 
-    eventlet.spawn(gen_temp)
-    eventlet.spawn(gen_frame)
-    eventlet.spawn(gen_time)
-    eventlet.spawn(gen_fps)
+    eventlet.spawn(genCamOutputs)
+
     log.info("Eventlets spawned")
 
     print("END: before_first_request")
@@ -132,57 +130,7 @@ def download():
     return send_file(File, as_attachment=True)
 
 
-def gen_time():
-    """get time current time to display on website"""
-    lastSignOfLife = int(dt.now().timestamp())
-    startTime = dt.now()
-    while True:
-        if config["logEventlet"].upper() == "TRUE":
-            log.info(color_magenta + "gen_time" + color_reset)
-        socketio.emit("time", dt.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-        if (
-            config["logSignOfLife"] != 0
-            and int(dt.now().timestamp()) - lastSignOfLife >= config["logSignOfLife"]
-        ):
-            try:
-                log.info(f"App ist still running: {str(dt.now()-startTime)[:-7]}")
-            except Exception as e:
-                log.warning(color_red + str(e) + color_reset)
-            # lastSignOfLife = int(dt.now().timestamp())
-            lastSignOfLife += config["logSignOfLife"]
-
-        eventlet.sleep(config["refresh_delay_data"])
-
-
-def gen_fps():
-    """get time current time to display on website"""
-    while True:
-        if "cam" in globals():
-            if config["logEventlet"].upper() == "TRUE":
-                log.info(color_cyan + "gen_fps" + color_reset)
-            socketio.emit(
-                "fps",
-                round(cam.ia.remote_device.node_map.AcquisitionFrameRate.value, 1),
-            )
-        eventlet.sleep(config["refresh_delay_data"])
-
-
-def gen_temp():
-    """get camera temperature displayable on website"""
-    while True:
-        if "cam" in globals():
-            if config["logEventlet"].upper() == "TRUE":
-                log.info(color_green + "gen_temp" + color_reset)
-            socketio.emit(
-                "temp_feed",
-                f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C"
-                + "\n\n",
-            )
-        eventlet.sleep(config["refresh_delay_data"])
-
-
-def gen_frame():
+def genCamOutputs():
     """get frame displayable on website from camera"""
     while True:
         if "cam" in globals():
@@ -211,16 +159,20 @@ def gen_frame():
                     )
                     socketio.emit(
                     "temp_feed", {
-                    "temp" : f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C"
-                    + "\n\n",
+                    "temp" : f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C",
                     "id": cam.ia_id}
-            )
+                    )
+                    socketio.emit(
+                    "fps_feed", {
+                    "fps" : round(cam.ia.remote_device.node_map.AcquisitionFrameRate.value, 1),
+                    "id": cam.ia_id}
+                    )
                 except Exception as e:
                     log.warning(color_red + "Getting Frame Failed" + color_reset)
                     log.warning(color_yellow + str(e) + color_reset)
                     eventlet.sleep(3)
             cam.ia = old_ia
-            eventlet.sleep(config["refresh_delay_camera"])
+            eventlet.sleep(config["refresh_delay"])
 
 
 if __name__ == "__main__":

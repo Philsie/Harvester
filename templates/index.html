@@ -55,10 +55,10 @@
           // Update the website with the received data
           document.getElementById('time'+data).innerHTML = "current time: "+data;;
       });
-      socket.on('fps', function(data) {
+      socket.on('fps_feed', function(data) {
           console.log('Received data from fps: ', data);
           // Update the website with the received data
-          document.getElementById('fps').innerHTML = "current fps: " +data;;
+          document.getElementById('fps-'+data.id).innerHTML = "current fps: " +data.fps;;
       });
       function sendToBackend(data) {
         socket.emit("cam_config",data)
@@ -69,7 +69,9 @@
 <body>
   
   <h1>Video Streaming Demonstration</h1>
+  <div class="grid-container">
   {% for cam in available_Cameras %}
+    <div class ="grid-item">
       <div class="container">
         <!--Exposure-->
         <div>
@@ -142,18 +144,20 @@
         </div>
       </div>
 
-    <div class="container">
-      <div><p id="temp_feed-{{cam}}"></p></div>
-      <div><p id="time"></p></div>
-      <div><p id="fps"></p></div>
-    </div>
-
-    <div id = cam_container>
-      <img id="{{cam}}" src="" alt="Camera Stream"><br>
-      <div id="footer">
-        <p>{{cam}}</p>
+      <div class="container">
+        <div><p id="temp_feed-{{cam}}"></p></div>
+        <div><p id="time"></p></div>
+        <div><p id="fps-{{cam}}"></p></div>
       </div>
-    </div>
+
+      <div id = cam_container>
+        <img id="{{cam}}" src="" alt="Camera Stream"><br>
+        <div id="footer">
+          <p>{{cam}}</p>
+        </div>
+      </div>
+    </div>  
   {% endfor %}
+  </div>
 </body>
 </html

@@ -10,8 +10,7 @@
 	    "./cti/ids_u3vgentl.cti",
 	    "./cti/VimbaUSBTL.cti"
     ],
-    "refresh_delay_camera": 0.05,
-    "refresh_delay_data": 1,
+    "refresh_delay": 0.05,
 
     "comment-loglevel": "loglevel should be 'info' or 'debug'" ,
     "loglevel": "debug",
