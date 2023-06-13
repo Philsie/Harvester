@@ -75,12 +75,12 @@
       <div class="container">
         <!--Exposure-->
         <div>
-          <p><input type="number" name="exposure" value="{{expo}}" id="exposure" step="100" oninput="sendToBackend(['{{cam}}','exposure',value])" onchange="sendToBackend(['{{cam}}','exposure',value])"/></p>
+          <p><input type="number" name="exposure" value="{{expo}}" id="exposure" step="100" oninput="sendToBackend(['{{cam}}','exposure',value])" /></p>
           <label for="exposure"> Exposure </label>
         </div>
         <!--Gain-->
         <div>
-          <p><input type="number" name="gain" value="{{gain}}" id="gain" step="1" oninput="sendToBackend(['{{cam}}','gain',value])" onchange="sendToBackend(['{{cam}}','gain',value])"/> </p>
+          <p><input type="number" name="gain" value="{{gain}}" id="gain" step="1" oninput="sendToBackend(['{{cam}}','gain',value])" /> </p>
           <label for="gain"> Gain </label>
         </div>
         <!--AspectRatio-->

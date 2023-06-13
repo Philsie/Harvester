@@ -85,14 +85,15 @@ class GenICam:
 
         log.info("Init Done: GenICam")
 
-    def change_ia(self, id, setup=False):
+    def change_ia(self, id, setup=False, logChange = True):
         """change the used Image Acquirer to a new one based on provided Id"""
-        if id in list(self.ia_dict.keys()) and id != self.ia_id:
-            self.ia = self.ia_dict[id]
+        if str(id) in list(self.ia_dict.keys()) and id != self.ia_id:
+            if not str(id) in list(self.ia_dict.keys()) : log.error("++++++++++++++++"*10) 
+            self.ia = self.ia_dict[str(id)]
             if setup:
                 self.setup_ia()
-            log.info(f"changed ImageAcquirer from {self.ia_id} to {id}")
-            self.ia_id = id
+            if logChange: log.info(f"changed ImageAcquirer from {self.ia_id} to {id}")
+            self.ia_id = str(id)
 
     def setup_ia(self):
         # configure current ImageAcquirer based on config and default values

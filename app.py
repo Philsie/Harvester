@@ -39,6 +39,8 @@ color_magenta = "\033[95m"
 color_cyan = "\033[96m"
 color_reset = "\033[0m"
 
+runStream = True
+
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode="eventlet")
 
@@ -48,8 +50,11 @@ with open("config.json") as config_file:
 
 @socketio.on("cam_config")
 def Test(data):
-    # log.info(color_red+str(event)+color_reset)
-    log.info(color_red + str(data) + color_reset)
+    runStream = False
+    #sleep(config["refresh_delay"])
+    log.info(" ")
+    log.info("New Config")
+    log.info(color_yellow + str(data) + color_reset)
     cam.change_ia(data[0])
     if data[1] == "exposure":
         cam.exposure = int(data[2])
@@ -67,7 +72,7 @@ def Test(data):
         scales[data[0]][0] = int(data[2])
     if data[1] == "height":
         scales[data[0]][1] = int(data[2])
-
+    runStream = True
     log.info(color_green + "Done" + color_reset)
 
 
@@ -121,25 +126,16 @@ def index():
     )
 
 
-@app.route("/download")
-def download():
-    """Download the image currently displayed"""
-    File = "cam_download.png"
-    cam.trigger()
-    cam.grab(save=True)
-    return send_file(File, as_attachment=True)
-
-
 def genCamOutputs():
     """get frame displayable on website from camera"""
     while True:
-        if "cam" in globals():
+        if "cam" in globals() and runStream is True:
             if config["logEventlet"].upper() == "TRUE":
                 log.info(color_blue + "gen_frame" + color_reset)
-            old_ia = cam.ia
+            #old_ia = cam.ia
             for id in list(cam.ia_dict.keys()):
                 if id != cam.ia_id:
-                    cam.change_ia(id)
+                    cam.change_ia(id, logChange=False)
                 try:
                     cam.trigger()
                     image_data = cam.grab()
@@ -171,7 +167,7 @@ def genCamOutputs():
                     log.warning(color_red + "Getting Frame Failed" + color_reset)
                     log.warning(color_yellow + str(e) + color_reset)
                     eventlet.sleep(3)
-            cam.ia = old_ia
+            #cam.ia = old_ia
             eventlet.sleep(config["refresh_delay"])
 
 
