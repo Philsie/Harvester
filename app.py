@@ -1,8 +1,6 @@
 import base64
-import copy
 import io
 import json
-import os
 from datetime import datetime as dt
 from time import sleep
 
@@ -55,7 +53,7 @@ def Test(data):
     log.info(" ")
     log.info("New Config")
     log.info(color_yellow + str(data) + color_reset)
-    cam.change_ia(data[0])
+    cam.change_ia(data[0], logChange=False)
     if data[1] == "exposure":
         cam.exposure = int(data[2])
     if data[1] == "gain":

@@ -1,6 +1,18 @@
 ## Packages needed:
 
-
+PIL
+harvesters==1.3.2
+numpy
+logging
+datetime
+time
+json
+io
+copy
+flask
+flask_socketio
+eventlet
+base64
 
 ## Camera Setup:
 
