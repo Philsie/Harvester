@@ -59,6 +59,7 @@ class GenICam:
             self.Harvester.add_file(path)
         log.info(self.Harvester.files)
         self.Harvester.update()
+        log.info(self.Harvester.device_info_list)
         log.info("ctis loaded")
 
         self.ia_id = None
@@ -100,8 +101,8 @@ class GenICam:
         self.ia.remote_device.node_map.BalanceWhiteAuto.value = "Off"
 
         self.PixelFormat = "BGR8"
-        self.width = self.config["width"]
-        self.height = self.config["height"]
+        #self.width = self.config["width"]
+        #self.height = self.config["height"]
         self.exposure = self.config["exposure"]
         self.gain = self.config["gain"]
 

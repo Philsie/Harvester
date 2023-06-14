@@ -162,10 +162,13 @@ def genCamOutputs():
                     "id": cam.ia_id}
                     )
                 except Exception as e:
+                    log.warning("")
+                    log.warning(color_red + "Start of Error" + color_reset)
                     log.warning(color_red + "Getting Frame Failed" + color_reset)
                     log.warning(color_yellow + str(e) + color_reset)
-                    eventlet.sleep(3)
-            #cam.ia = old_ia
+                    log.warning(color_yellow + cam.ia_id + color_reset)
+
+                    eventlet.sleep(0.1)
             eventlet.sleep(config["refresh_delay"])
 
 
