@@ -19,7 +19,7 @@ from flask import (
 from flask_socketio import SocketIO, emit
 from PIL import Image, ImageDraw, ImageFont
 
-from GenICam import GenICam, log
+from GenICamOld import GenICamOld, log
 
 #########
 # https://github.com/langenhagen/experiments-and-tutorials/blob/master/Python/genicam-harvesters-hello/main.py
@@ -79,7 +79,7 @@ def before_first_request():
     """code run before loading Main page"""
     print("Start: before_first_request")
     global cam
-    cam = GenICam()
+    cam = GenICamOld()
 
     global scales
     scales = {}

@@ -14,6 +14,11 @@ flask_socketio
 eventlet
 base64
 
+## .Cti
+
+Place all .cti file into the cti folder or create a symlink with the ending .sym  
+    > ln -s /path/to/target /path/to/symlink.sym
+
 ## Camera Setup:
 
 ### Allied Vision:
