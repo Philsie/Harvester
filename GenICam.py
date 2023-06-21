@@ -162,7 +162,7 @@ class GenICam:
             if log:
                 self.logger.info(cs(f"{self.logPrefix} Saved during grabbing", "Aqua"))
             img = Image.fromarray(image_data)
-            img.save(f"{self.id}-Image.png")
+            img.save(f"./images/{self.id}-Image.png")
 
         return image_data
 

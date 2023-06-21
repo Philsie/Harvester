@@ -8,7 +8,7 @@
     "logEventlet": "False",
 
     "comment-logSignOfLife": "log a sign of Life every x seconds, set to 0 to turn off",
-    "logSignOfLife": 2,
+    "logSignOfLife": 10,
 
     "comment-port": "The port the frontend will be running on",
     "port": "5050"
