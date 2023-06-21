@@ -49,7 +49,7 @@ with open("config.json") as config_file:
 @socketio.on("cam_config")
 def Test(data):
     runStream = False
-    #sleep(config["refresh_delay"])
+    # sleep(config["refresh_delay"])
     log.info(" ")
     log.info("New Config")
     log.info(color_yellow + str(data) + color_reset)
@@ -109,7 +109,7 @@ def index():
         "index.html",
         gain=cam.gain,
         res=list(scales.values())[0],
-        #cur_res=cam.scale,
+        # cur_res=cam.scale,
         expo=int(cam.exposure),
         info=f"<p>{cam.ia.remote_device.node_map.DeviceVendorName.value} - {cam.ia_id}</p>",
         pixelformat=cam.PixelFormat,
@@ -130,7 +130,7 @@ def genCamOutputs():
         if "cam" in globals() and runStream is True:
             if config["logEventlet"].upper() == "TRUE":
                 log.info(color_blue + "gen_frame" + color_reset)
-            #old_ia = cam.ia
+            # old_ia = cam.ia
             for id in list(cam.ia_dict.keys()):
                 if id != cam.ia_id:
                     cam.change_ia(id, logChange=False)
@@ -152,14 +152,21 @@ def genCamOutputs():
                         "video_feed", {"image": encoded_image, "id": cam.ia_id}
                     )
                     socketio.emit(
-                    "temp_feed", {
-                    "temp" : f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C",
-                    "id": cam.ia_id}
+                        "temp_feed",
+                        {
+                            "temp": f"{round(cam.ia.remote_device.node_map.DeviceTemperature.value,1)} °C",
+                            "id": cam.ia_id,
+                        },
                     )
                     socketio.emit(
-                    "fps_feed", {
-                    "fps" : round(cam.ia.remote_device.node_map.AcquisitionFrameRate.value, 1),
-                    "id": cam.ia_id}
+                        "fps_feed",
+                        {
+                            "fps": round(
+                                cam.ia.remote_device.node_map.AcquisitionFrameRate.value,
+                                1,
+                            ),
+                            "id": cam.ia_id,
+                        },
                     )
                 except Exception as e:
                     log.warning("")

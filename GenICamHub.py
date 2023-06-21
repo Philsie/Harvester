@@ -1,57 +1,129 @@
-from GenICam import GenICam
-from harvesters.core import Harvester
-import os
+import copy
 import logging
+import os
 from datetime import datetime as dt
+
+from harvesters.core import Harvester
+from stringcolor import *
+
+from GenICam import GenICam
+
 
 class GenICamHub:
     """
 
     """
 
-    def __init__(self, logger:logging.Logger = None) -> None:
+    def __init__(self) -> None:
 
-        self.deviceList = {}
+        self.deviceDict = {}
+        self.fileDict = {}
         self.activeDevice = None
+        self.activeDeviceId = None
 
         ids = []
 
-        if logger is None:
-            self.logger = logging.getLogger(__name__)
-            logging.basicConfig(
-                format="%(asctime)s [%(levelname)s]: %(filename)s: "+"ln "+ "%(lineno)d: %(message)s",
-                datefmt="%T",
-                filename="".join("logs/GenICam-Hub.log".split(" ")),
-                level=logging.INFO
-            )
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(
+            format="%(asctime)s [%(levelname)s]: %(filename)s: "
+            + "ln "
+            + "%(lineno)d: "
+            + "\t" * 2
+            + "%(message)s",
+            datefmt="%T",
+            filename="logs/GenICam-Hub.log",
+            level=logging.INFO,
+        )
 
-            self.logger.info(".\n" * 25)
-            self.logger.info(f"Start of Log - {dt.now()} - Hub")
+        self.logger.info(".\n" * 25)
+        self.logger.info(cs(f"Start of Log - {dt.now()} - Hub", "Green"))
 
-        with Harvester() as H:
-            for root, dir, files in os.walk("./cti"):
-                for file in files:
-                    if file.split(".")[-1] in ["cti","sym"]:
-                        path = root+"/"+file
-                        H.add_file(file_path = path)
-                    else:
-                        pass
+        self.ctiFiles = []
+        self.deviceDict = {}
 
-            H.update()
+        self.Harvester = Harvester()
 
-            self.logger.info(H.device_info_list)
-            for device in H.device_info_list:
-                self.logger.info(str(device))
-                self.logger.info(str(device).split("'")[1])
-                ids.append(str(device).split("'")[1])
+        for root, dir, files in os.walk("./cti"):
+            for file in files:
+                if file.split(".")[-1] in ["cti", "sym"] and root != "./cti/inactive":
+                    path = root + "/" + file
+                    self.ctiFiles.append(path)
+                else:
+                    pass
 
-        #H.release()
+        self.ctiFiles.sort()
 
-        self.logger.info(ids)
+        for file in self.ctiFiles:
+            self.logger.info(cs(f"File added; {file}", "Teal"))
+            self.Harvester.add_file(file)
 
-        for id in ids:
-            self.deviceList[id] = GenICam(id=id)
+        self.Harvester.update()
 
-GCH = GenICamHub()
-GCH.logger.info(GCH.deviceList)
+        self.deviceList = self.Harvester.device_info_list
 
+        self.logger.info(cs(f"Devices found:", "Teal"))
+        for device in self.deviceList:
+            self.logger.info(cs(f"\t {str(device)}", "Teal"))
+
+        for device in self.deviceList:
+            devString = str(device)
+
+            id = devString.split("'")[1]
+            self.logger.info(cs(id, "Teal"))
+
+            try:
+                self.deviceDict[id] = GenICam(
+                    self.logger,
+                    ImageAcquirer=self.Harvester.create_image_acquirer(
+                        self.deviceList.index(device)
+                    ),
+                    id=id,
+                )
+                self.logger.info(cs(f"Device stated: {id}", "Teal"))
+            except Exception as e:
+                self.logger.warn(
+                    cs(f"failed creating GenICam for {devString}", "Orange")
+                )
+                self.logger.warn(cs(str(e), "Orange"))
+
+        self.listRunningDevices()
+
+        if len(self.deviceDict) > 0:
+            self.activeDevice = list(self.deviceDict.values())[0]
+            self.activeDeviceId = list(self.deviceDict.keys())[0]
+        else:
+            self.logger.error(cs(f"No Valid devices running - shutting down"))
+            exit()
+
+    def listRunningDevices(self):
+        if len(self.deviceDict) > 0:
+            self.logger.info(cs(f"{len(self.deviceDict)} devices running", "Teal"))
+
+            for id, Device in self.deviceDict.items():
+                self.logger.info(cs(" " * 8 + f" {id} - {Device}", "Teal"))
+            return list(self.deviceDict.values())
+        else:
+            self.logger.info(cs("No devices found", "Teal"))
+
+    def changeDevice(self, id: str):
+        self.logger.info(
+            cs(f"changing active device from {self.activeDeviceId} to {id}", "Teal")
+        )
+        if id in list(self.deviceDict.keys()) and id != self.activeDeviceId:
+
+            self.activeDevice = self.deviceDict[id]
+            old_id = copy.copy(self.activeDeviceId)
+            self.activeDeviceId = id
+
+        else:
+            self.logger.warning(cs(f"No device with ID: {id} found", "Orange"))
+
+    def exportDevice(self):
+        self.logger.info(cs(f"exporting {self.activeDeviceId}", "Teal"))
+        return self.activeDevice
+
+
+if __name__ == "__main__":
+    GCH = GenICamHub()
+    GCH.activeDevice.trigger()
+    GCH.activeDevice.grab(save=True)

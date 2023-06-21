@@ -21,7 +21,7 @@ Place all .cti file into the cti folder or create a symlink with the ending .sym
 
 ## Camera Setup:
 
-### Allied Vision:
+# Allied Vision:
 
 1. Download SDK from their website [Allied Vision](https://www.alliedvision.com/en/products/vimba-sdk/)  
 ***dont use Vimba_X !***
@@ -32,8 +32,6 @@ Place all .cti file into the cti folder or create a symlink with the ending .sym
 3. Copy .cti file into local cti folder
     > VimbaUSBTL/CTI/x86_64bit/VimbaUSBTL.cti
 
-## Log:
-
 # IDS -- Not Working Currently
 
 * Download https://en.ids-imaging.com/download-details/AB12776.html?os=linux&version=&bus=64&floatcalc=#anc-software-367
@@ -41,3 +39,11 @@ Place all .cti file into the cti folder or create a symlink with the ending .sym
     > /lib/cti
 * udev rules:
     > /local/scripts
+
+## known issues:
+
+# Allied Vision:
+
+* Stoppen working even though plugged in and found by Harvester  
+    > GenTL exception: Operation timed out before completion. (Message from the source: Timeout while sending packet.) (ID: -1011)
+    fixed by replugging during testing

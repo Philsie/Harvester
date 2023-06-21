@@ -6,9 +6,9 @@
     "exposure": 500,
     "gain": 0.0,
     "ctis": [
-            "./cti/ximea.gentl.cti",
+            "./cti/02-ximea.gentl.cti",
 	    "./cti/ids_u3vgentl.cti",
-	    "./cti/VimbaUSBTL.cti"
+	    "./cti/00-VimbaUSBTL.cti"
     ],
     "refresh_delay": 0.05,
 
