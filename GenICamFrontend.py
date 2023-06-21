@@ -115,25 +115,28 @@ def index():
 
 def genCamOutputs():
     """get frame displayable on website from camera"""
+    firstRun = dt.now()
+    time = dt.now()
+
+    logEventlet = True if config["logEventlet"].upper() == "TRUE" else False
 
     while True:
-        GCH.logger.info(f"running loop")
+        if config["logSignOfLife"] != 0 and (dt.now() - time).seconds > config["logSignOfLife"]:
+            runningTime = dt.now() - firstRun
+            
+            GCH.logger.info(cs(f"GenICamFrontend is running for {runningTime}","Thistle"))
+            time = dt.now()
         if runStream is True:
-            if config["logEventlet"].upper() == "TRUE":
+            if logEventlet:
+                GCH.logger.info("")
                 GCH.logger.info(cs("Generating active device Output", "Aqua"))
 
-            GCH.logger.info(list(GCH.deviceDict.keys()))
-
             for id in list(GCH.deviceDict.keys()):
-                GCH.logger.info(id)
-
                 if id != GCH.activeDeviceId:
-                    GCH.changeDevice(id)
-
+                    GCH.changeDevice(id,log = logEventlet)
                 try:
-                    GCH.activeDevice.trigger(log=bool(config["logEventlet"]))
-
-                    image_data = GCH.activeDevice.grab(log=bool(config["logEventlet"]))
+                    GCH.activeDevice.trigger(log=logEventlet)
+                    image_data = GCH.activeDevice.grab(log=logEventlet)
                     img_byte_arr = io.BytesIO()
                     img = Image.fromarray(image_data)
                     img = img.resize(scales[GCH.activeDeviceId])
@@ -167,8 +170,8 @@ def genCamOutputs():
                         },
                     )
 
-                    if config["logEventlet"].upper() == "TRUE":
-                        GCH.logger.info(f"Data for Device {id} send")
+                    if logEventlet:
+                        GCH.logger.info(cs(f"Data for Device {id} send","Teal"))
                 except Exception as e:
                     GCH.logger.error(cs(str(e), "Maroon"))
 
@@ -181,4 +184,4 @@ if __name__ == "__main__":
     """Run Flask application"""
 
     # run app
-    socketio.run(app, host="0.0.0.0", port=5050, debug=True)
+    socketio.run(app, host="0.0.0.0", port=int(config["port"]), debug=True)

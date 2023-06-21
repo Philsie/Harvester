@@ -31,7 +31,7 @@ class GenICamHub:
             + "\t" * 2
             + "%(message)s",
             datefmt="%T",
-            filename="logs/GenICam-Hub.log",
+            filename="logs/GenICam.log",
             level=logging.INFO,
         )
 
@@ -105,10 +105,12 @@ class GenICamHub:
         else:
             self.logger.info(cs("No devices found", "Teal"))
 
-    def changeDevice(self, id: str):
-        self.logger.info(
-            cs(f"changing active device from {self.activeDeviceId} to {id}", "Teal")
-        )
+    def changeDevice(self, id: str, log = True):
+        if log:
+            self.logger.info(
+                cs(f"changing active device from {self.activeDeviceId} to {id}", "Teal")
+            )
+
         if id in list(self.deviceDict.keys()) and id != self.activeDeviceId:
 
             self.activeDevice = self.deviceDict[id]

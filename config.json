@@ -1,22 +1,15 @@
 
 
 {
-    "width":1280,
-    "height":1024,
-    "exposure": 500,
-    "gain": 0.0,
-    "ctis": [
-            "./cti/02-ximea.gentl.cti",
-	    "./cti/ids_u3vgentl.cti",
-	    "./cti/00-VimbaUSBTL.cti"
-    ],
+    "comment-refresh_delay": "FroTime the eventlet sleeps after finishing a pass",
     "refresh_delay": 0.05,
 
-    "comment-loglevel": "loglevel should be 'info' or 'debug'" ,
-    "loglevel": "debug",
-
-    "logEventlet": "True",
+    "comment-logEventlet": "Turn On/Off logging of actions happening inside the eventlet (True/False)--> can cause spam inside the log",
+    "logEventlet": "False",
 
     "comment-logSignOfLife": "log a sign of Life every x seconds, set to 0 to turn off",
-    "logSignOfLife": 2
+    "logSignOfLife": 2,
+
+    "comment-port": "The port the frontend will be running on",
+    "port": "5050"
 }

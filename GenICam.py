@@ -35,7 +35,7 @@ class GenICam:
         self.baseConfig()
 
     def baseConfig(self):
-        # configure current ImageAcquirer based on config and default values
+        # configure ImageAcquirer based to default values
         self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = "Off"
 
         self.exposure = 1500
