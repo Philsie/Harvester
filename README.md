@@ -1,3 +1,9 @@
+## Info
+
+# Structure  
+To get an overview of the Code strukture take a look at the GenICam.dio file:  
+    To open it either use the vscode extension Draaw.io or their Website [Draw.io](https://app.diagrams.net/)
+
 ## Packages needed:
 
 Pillow
