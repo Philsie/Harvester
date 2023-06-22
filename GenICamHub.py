@@ -17,11 +17,8 @@ class GenICamHub:
     def __init__(self) -> None:
 
         self.deviceDict = {}
-        self.fileDict = {}
         self.activeDevice = None
         self.activeDeviceId = None
-
-        ids = []
 
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(
@@ -39,7 +36,6 @@ class GenICamHub:
         self.logger.info(cs(f"Start of Log - {dt.now()} - Hub", "Green"))
 
         self.ctiFiles = []
-        self.deviceDict = {}
 
         self.Harvester = Harvester()
 
@@ -111,18 +107,21 @@ class GenICamHub:
                 cs(f"changing active device from {self.activeDeviceId} to {id}", "Teal")
             )
 
-        if id in list(self.deviceDict.keys()) and id != self.activeDeviceId:
-
-            self.activeDevice = self.deviceDict[id]
-            old_id = copy.copy(self.activeDeviceId)
-            self.activeDeviceId = id
-
+        if id in list(self.deviceDict.keys()):
+            if id != self.activeDeviceId:
+                self.activeDevice = self.deviceDict[id]
+                old_id = copy.copy(self.activeDeviceId)
+                self.activeDeviceId = id
         else:
             self.logger.warning(cs(f"No device with ID: {id} found", "Orange"))
 
-    def exportDevice(self):
-        self.logger.info(cs(f"exporting {self.activeDeviceId}", "Teal"))
-        return self.activeDevice
+    def exportDevice(self,id:str):
+        self.logger.info(cs(f"exporting {id}", "Teal"))
+        try:
+            self.changeDevice(id)  
+            return self.activeDevice
+        except Exception as e:
+            self.logger.warning(cs(f"Failed while exporting {id} \n {str(e)}","Orange"))
 
 
 if __name__ == "__main__":

@@ -166,9 +166,3 @@ class GenICam:
 
         return image_data
 
-
-if __name__ == "__main__":
-    GC = GenICam(id = "MQ013CG-E2 (38205351)")
-    GC.trigger()
-    GC.logger.info(GC.grab(save=True))
-
