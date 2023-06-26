@@ -1,16 +1,13 @@
 import base64
 import io
 import json
+import logging
 from datetime import datetime as dt
 from time import sleep
-import logging
 
 import eventlet
 import numpy as np
-from flask import (
-    Flask,
-    render_template
-)
+from flask import Flask, render_template
 from flask_socketio import SocketIO
 from PIL import Image, ImageDraw, ImageFont
 from stringcolor import *
@@ -90,9 +87,7 @@ def index():
     a_wb = []
     if GCH.activeDevice.PixelFormat == "BGR8":
         wb = GCH.activeDevice.Whitebalance
-        a_wb = (
-            GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.symbolics
-        )
+        a_wb = GCH.activeDevice.nodeMap.BalanceWhiteAuto.symbolics
 
     return render_template(
         "index.html",
@@ -100,11 +95,11 @@ def index():
         res=list(scales.values())[0],
         # cur_res=GCH.activeDevice.scale,
         expo=int(GCH.activeDevice.exposure),
-        info=f"<p>{GCH.activeDevice.ImageAcquirer.remote_device.node_map.DeviceVendorName.value} - {GCH.activeDeviceId}</p>",
+        info=f"<p>{GCH.activeDevice.nodeMap.DeviceVendorName.value} - {GCH.activeDeviceId}</p>",
         pixelformat=GCH.activeDevice.PixelFormat,
         available_pixelformats=np.intersect1d(
             GCH.activeDevice.supported_PixelFormats,
-            GCH.activeDevice.ImageAcquirer.remote_device.node_map.PixelFormat.symbolics,
+            GCH.activeDevice.nodeMap.PixelFormat.symbolics,
         ),
         whitebalance=wb,
         available_whitebalances=a_wb,
@@ -154,7 +149,7 @@ def genCamOutputs():
                     socketio.emit(
                         "temp_feed",
                         {
-                            "temp": f"{round(GCH.activeDevice.ImageAcquirer.remote_device.node_map.DeviceTemperature.value,1)} °C",
+                            "temp": f"{round(GCH.activeDevice.nodeMap.DeviceTemperature.value,1)} °C",
                             "id": GCH.activeDeviceId,
                         },
                     )
@@ -163,7 +158,7 @@ def genCamOutputs():
                         "fps_feed",
                         {
                             "fps": round(
-                                GCH.activeDevice.ImageAcquirer.remote_device.node_map.AcquisitionFrameRate.value,
+                                GCH.activeDevice.nodeMap.AcquisitionFrameRate.value,
                                 1,
                             ),
                             "id": GCH.activeDeviceId,

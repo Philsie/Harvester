@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 class GenICam:
     """ """
 
-    #def __init__(
-    #    self, logger: logging.Logger, ImageAcquirer: ImageAcquirer, id: str
-    #) -> None:
     def __init__(
         self, ImageAcquirer: ImageAcquirer, id: str
     ) -> None:
@@ -25,6 +22,8 @@ class GenICam:
         self.logPrefix = "\t" + self.id + " -"
 
         self.ImageAcquirer = ImageAcquirer
+
+        self.nodeMap = self.ImageAcquirer.remote_device.node_map
 
         self.supported_PixelFormats = ["BGR8", "Mono8"]
 
@@ -39,7 +38,7 @@ class GenICam:
 
     def baseConfig(self):
         # configure ImageAcquirer based to default values
-        self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = "Off"
+        self.nodeMap.BalanceWhiteAuto.value = "Off"
 
         self.exposure = 1500
         self.gain = 0.0
@@ -47,21 +46,21 @@ class GenICam:
         self.PixelFormat = "BGR8"
 
         self.ImageAcquirer.stop_image_acquisition()
-        self.ImageAcquirer.remote_device.node_map.TriggerMode.value = "On"
-        self.ImageAcquirer.remote_device.node_map.TriggerSource.value = "Software"  # with IDS, "Software" is the default
-        self.ImageAcquirer.remote_device.node_map.TriggerActivation.value = "RisingEdge"  # with the IDS cam, "RisingEdge" is the default and only option
+        self.nodeMap.TriggerMode.value = "On"
+        self.nodeMap.TriggerSource.value = "Software"
+        self.nodeMap.TriggerActivation.value = "RisingEdge"
         self.ImageAcquirer.start_image_acquisition()
 
     @property
     def exposure(self):
         """set/get exposure of image taken"""
-        return self.ImageAcquirer.remote_device.node_map.ExposureTime.value
+        return self.nodeMap.ExposureTime.value
 
     @exposure.setter
     def exposure(self, e):
         if e > 0 and isinstance(e, int):
             try:
-                self.ImageAcquirer.remote_device.node_map.ExposureTime.value = e
+                self.nodeMap.ExposureTime.value = e
                 logger.info(cs(f"{self.logPrefix} Exposure set to {e}", "Teal"))
             except Exception as ex:
                 logger.exception(cs(self.logPrefix + str(ex), "Maroon"),stack_info=True)
@@ -76,12 +75,12 @@ class GenICam:
     @property
     def gain(self):
         """set/get gain of image taken"""
-        return self.ImageAcquirer.remote_device.node_map.Gain.value
+        return self.nodeMap.Gain.value
 
     @gain.setter
     def gain(self, g):
         if g >= 0.0 and type(g) == float:
-            self.ImageAcquirer.remote_device.node_map.Gain.value = g
+            self.nodeMap.Gain.value = g
             logger.info(cs(f"{self.logPrefix} Gain set to {g}", "Teal"))
         else:
             logger.warning(
@@ -94,16 +93,16 @@ class GenICam:
     @property
     def PixelFormat(self):
         """set/get PixelFormat of image taken"""
-        return self.ImageAcquirer.remote_device.node_map.PixelFormat.value
+        return self.nodeMap.PixelFormat.value
 
     @PixelFormat.setter
     def PixelFormat(self, pf):
         try:
             if isinstance(pf, str) and pf in np.intersect1d(
                 self.supported_PixelFormats,
-                self.ImageAcquirer.remote_device.node_map.PixelFormat.symbolics,
+                self.nodeMap.PixelFormat.symbolics,
             ):
-                self.ImageAcquirer.remote_device.node_map.PixelFormat.value = pf
+                self.nodeMap.PixelFormat.value = pf
                 logger.info(
                     cs(f"{self.logPrefix} Pixelformat set to {pf}", "Teal")
                 )
@@ -120,13 +119,13 @@ class GenICam:
     @property
     def Whitebalance(self):
         """set/get Whitebalance of image taken"""
-        return self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value
+        return self.nodeMap.BalanceWhiteAuto.value
 
     @Whitebalance.setter
     def Whitebalance(self, wb):
         try:
-            if isinstance(wb, str) and wb in self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.symbolics:
-                self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = wb
+            if isinstance(wb, str) and wb in self.nodeMap.BalanceWhiteAuto.symbolics:
+                self.nodeMap.BalanceWhiteAuto.value = wb
                 logger.info(
                     cs(f"{self.logPrefix} Whitebalance set to {wb}", "Teal")
                 )
@@ -144,7 +143,7 @@ class GenICam:
         """Make the camera take a picture"""
         if log:
             logger.info(cs(f"{self.logPrefix} Triggered", "Aqua"))
-        self.ImageAcquirer.remote_device.node_map.TriggerSoftware.execute()
+        self.nodeMap.TriggerSoftware.execute()
 
     def grab(self, save=False, log=True):
         """Return the image taken as a list of pixel Values"""
