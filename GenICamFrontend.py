@@ -1,22 +1,14 @@
 import base64
 import io
 import json
+import logging
 from datetime import datetime as dt
 from time import sleep
 
 import eventlet
 import numpy as np
-from flask import (
-    Flask,
-    Response,
-    flash,
-    redirect,
-    render_template,
-    request,
-    send_file,
-    url_for,
-)
-from flask_socketio import SocketIO, emit
+from flask import Flask, render_template
+from flask_socketio import SocketIO
 from PIL import Image, ImageDraw, ImageFont
 from stringcolor import *
 
@@ -27,6 +19,8 @@ runStream = True
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode="eventlet")
 
+logger = logging.getLogger(__name__)
+
 with open("config.json") as config_file:
     config = json.load(config_file)
 
@@ -35,26 +29,29 @@ with open("config.json") as config_file:
 def Test(data):
     runStream = False
     # sleep(config["refresh_delay"])
-    GCH.logger.info(cs(str(data), "Yellow"))
-    GCH.changeDevice(data[0])
-    if data[1] == "exposure":
-        GCH.activeDevice.exposure = int(data[2])
-    if data[1] == "gain":
-        GCH.activeDevice.gain = float(data[2])
-    if data[1] == "pixelformat":
-        GCH.activeDevice.ImageAcquirer.stop_acquisition()  # might remove
-        GCH.activeDevice.PixelFormat = str(data[2])
-        GCH.activeDevice.ImageAcquirer.start_acquisition()  # might remove
-    if data[1] == "whitebalance":
-        GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = (
-            str(data[2])
-        )
-    if data[1] == "width":
-        scales[data[0]][0] = int(data[2])
-    if data[1] == "height":
-        scales[data[0]][1] = int(data[2])
-    runStream = True
-    GCH.logger.info(cs(f"Changes to {GCH.activeDeviceId} applied"))
+    try:
+        logger.info(cs(str(data), "Yellow"))
+        GCH.change_Device(data[0])
+        if data[1] == "exposure":
+            GCH.activeDevice.exposure = int(data[2])
+        if data[1] == "gain":
+            GCH.activeDevice.gain = float(data[2])
+        if data[1] == "pixelformat":
+            GCH.activeDevice.ImageAcquirer.stop_acquisition()  # might remove
+            GCH.activeDevice.PixelFormat = str(data[2])
+            GCH.activeDevice.ImageAcquirer.start_acquisition()  # might remove
+        if data[1] == "whitebalance":
+            GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = (
+                str(data[2])
+            )
+        if data[1] == "width":
+            scales[data[0]][0] = int(data[2])
+        if data[1] == "height":
+            scales[data[0]][1] = int(data[2])
+        runStream = True
+        logger.info(cs(f"Changes to {GCH.activeDeviceId} applied","Teal"))
+    except Exception as e:
+        logger.exception(cs(str(e),"Red"),stack_info=True)
 
 
 @app.before_first_request
@@ -62,11 +59,11 @@ def before_first_request():
     """code run before loading Main page"""
     global GCH
     GCH = GenICamHub.GenICamHub()
-    GCH.logger.info("")
-    GCH.logger.info(cs("-" * 100, "Green"))
-    GCH.logger.info(cs(f"Start of Log - {dt.now()} - Frontend", "Green"))
+    logger.info("")
+    logger.info(cs("-" * 100, "Green"))
+    logger.info(cs(f"Start of Log - {dt.now()} - Frontend", "Green"))
 
-    GCH.logger.info(cs("Start: before_first_request", "Olive"))
+    logger.info(cs("Start: before_first_request", "Olive"))
 
     global scales
     scales = {}
@@ -76,9 +73,9 @@ def before_first_request():
 
     eventlet.spawn(genCamOutputs)
 
-    GCH.logger.info(cs("Eventlets spawned", "Olive"))
+    logger.info(cs("Eventlets spawned", "Olive"))
 
-    GCH.logger.info(cs("END: before_first_request", "Olive"))
+    logger.info(cs("END: before_first_request", "Olive"))
 
 
 @app.route("/")
@@ -90,9 +87,7 @@ def index():
     a_wb = []
     if GCH.activeDevice.PixelFormat == "BGR8":
         wb = GCH.activeDevice.Whitebalance
-        a_wb = (
-            GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.symbolics
-        )
+        a_wb = GCH.activeDevice.nodeMap.BalanceWhiteAuto.symbolics
 
     return render_template(
         "index.html",
@@ -100,11 +95,11 @@ def index():
         res=list(scales.values())[0],
         # cur_res=GCH.activeDevice.scale,
         expo=int(GCH.activeDevice.exposure),
-        info=f"<p>{GCH.activeDevice.ImageAcquirer.remote_device.node_map.DeviceVendorName.value} - {GCH.activeDeviceId}</p>",
+        info=f"<p>{GCH.activeDevice.nodeMap.DeviceVendorName.value} - {GCH.activeDeviceId}</p>",
         pixelformat=GCH.activeDevice.PixelFormat,
         available_pixelformats=np.intersect1d(
             GCH.activeDevice.supported_PixelFormats,
-            GCH.activeDevice.ImageAcquirer.remote_device.node_map.PixelFormat.symbolics,
+            GCH.activeDevice.nodeMap.PixelFormat.symbolics,
         ),
         whitebalance=wb,
         available_whitebalances=a_wb,
@@ -124,16 +119,16 @@ def genCamOutputs():
         if config["logSignOfLife"] != 0 and (dt.now() - time).seconds > config["logSignOfLife"]:
             runningTime = dt.now() - firstRun
             
-            GCH.logger.info(cs(f"GenICamFrontend is running for {runningTime}","Thistle"))
+            logger.info(cs(f"GenICamFrontend is running for {runningTime}","Thistle"))
             time = dt.now()
         if runStream is True:
             if logEventlet:
-                GCH.logger.info("")
-                GCH.logger.info(cs("Generating active device Output", "Aqua"))
+                logger.info("")
+                logger.info(cs("Generating active device Output", "Aqua"))
 
             for id in list(GCH.deviceDict.keys()):
                 if id != GCH.activeDeviceId:
-                    GCH.changeDevice(id,log = logEventlet)
+                    GCH.change_Device(id,log = logEventlet)
                 try:
                     GCH.activeDevice.trigger(log=logEventlet)
                     image_data = GCH.activeDevice.grab(log=logEventlet)
@@ -154,7 +149,7 @@ def genCamOutputs():
                     socketio.emit(
                         "temp_feed",
                         {
-                            "temp": f"{round(GCH.activeDevice.ImageAcquirer.remote_device.node_map.DeviceTemperature.value,1)} °C",
+                            "temp": f"{round(GCH.activeDevice.nodeMap.DeviceTemperature.value,1)} °C",
                             "id": GCH.activeDeviceId,
                         },
                     )
@@ -163,7 +158,7 @@ def genCamOutputs():
                         "fps_feed",
                         {
                             "fps": round(
-                                GCH.activeDevice.ImageAcquirer.remote_device.node_map.AcquisitionFrameRate.value,
+                                GCH.activeDevice.nodeMap.AcquisitionFrameRate.value,
                                 1,
                             ),
                             "id": GCH.activeDeviceId,
@@ -171,9 +166,10 @@ def genCamOutputs():
                     )
 
                     if logEventlet:
-                        GCH.logger.info(cs(f"Data for Device {id} send","Teal"))
+                        logger.info(cs(f"Data for Device {id} send","Teal"))
                 except Exception as e:
-                    GCH.logger.error(cs(str(e), "Maroon"))
+                    logger.exception(str(e),stack_info=True)
+                    #logger.error(cs(str(e), "Maroon"))
 
                     eventlet.sleep(0.1)
 

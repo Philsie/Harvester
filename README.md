@@ -6,15 +6,15 @@ To get an overview of the Code strukture take a look at the GenICam.dio file:
 
 ## Packages needed:
 
-Pillow
+Pillow==8.4.0
 harvesters==1.3.2
-numpy
-python-json-logger
-datetime
-flask
-flask_socketio
-eventlet
-string-color
+numpy==1.19.5
+python-json-logger==2.0.7
+datetime==4.9
+flask==2.0.3
+flask_socketio==5.3.4
+eventlet==0.33.3
+string-color==1.2.3
 
 * Including their dependencies
 * install these into a .venv directory
