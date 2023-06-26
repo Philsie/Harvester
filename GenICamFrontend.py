@@ -24,6 +24,22 @@ logger = logging.getLogger(__name__)
 with open("config.json") as config_file:
     config = json.load(config_file)
 
+fallBackColorstring = False
+if config["colorstring"].upper() == True:
+    try: 
+        from stringcolor import *
+    except Exception as e:
+        fallBackColorstring = True
+        logger.exception(cs(str(e),"Red"),stack_info=True)
+else: fallBackColorstring = True
+
+if fallBackColorstring:
+    logger.info(f"Using fallback for colorstring in {__file__}")
+    def cs(text,color):
+        return str(text)
+
+
+
 
 @socketio.on("cam_config")
 def Test(data):
