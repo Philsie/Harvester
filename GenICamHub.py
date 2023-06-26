@@ -77,12 +77,10 @@ class GenICamHub:
                 )
                 self.logger.info(cs(f"Device stated: {id}", "Teal"))
             except Exception as e:
-                self.logger.warn(
-                    cs(f"failed creating GenICam for {devString}", "Orange")
-                )
-                self.logger.warn(cs(str(e), "Orange"))
+                    self.logger.exception(cs(str(e),"Orange"),stack_info=True)
+            
 
-        self.listRunningDevices()
+        self.list_Running_Devices()
 
         if len(self.deviceDict) > 0:
             self.activeDevice = list(self.deviceDict.values())[0]
@@ -91,7 +89,7 @@ class GenICamHub:
             self.logger.error(cs(f"No Valid devices running - shutting down"))
             exit()
 
-    def listRunningDevices(self):
+    def list_Running_Devices(self):
         if len(self.deviceDict) > 0:
             self.logger.info(cs(f"{len(self.deviceDict)} devices running", "Teal"))
 
@@ -101,7 +99,7 @@ class GenICamHub:
         else:
             self.logger.info(cs("No devices found", "Teal"))
 
-    def changeDevice(self, id: str, log = True):
+    def change_Device(self, id: str, log = True):
         if log:
             self.logger.info(
                 cs(f"changing active device from {self.activeDeviceId} to {id}", "Teal")
@@ -115,13 +113,13 @@ class GenICamHub:
         else:
             self.logger.warning(cs(f"No device with ID: {id} found", "Orange"))
 
-    def exportDevice(self,id:str):
+    def export_Device(self,id:str):
         self.logger.info(cs(f"exporting {id}", "Teal"))
         try:
-            self.changeDevice(id)  
+            self.change_Device(id)  
             return self.activeDevice
         except Exception as e:
-            self.logger.warning(cs(f"Failed while exporting {id} \n {str(e)}","Orange"))
+            self.logger.exception(cs(str(e),"Orange"),stack_info=True)
 
 
 if __name__ == "__main__":

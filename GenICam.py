@@ -61,7 +61,7 @@ class GenICam:
                 self.ImageAcquirer.remote_device.node_map.ExposureTime.value = e
                 self.logger.info(cs(f"{self.logPrefix} Exposure set to {e}", "Teal"))
             except Exception as ex:
-                self.logger.error(cs(self.logPrefix + str(ex), "Maroon"))
+                self.logger.exception(cs(self.logPrefix + str(ex), "Maroon"),stack_info=True)
         else:
             self.logger.warning(
                 cs(
@@ -112,7 +112,7 @@ class GenICam:
                     )
                 )
         except Exception as e:
-            self.logger.error(cs(self.logPrefix + str(e), "Maroon"))
+            self.logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
 
     @property
     def Whitebalance(self):
@@ -135,7 +135,7 @@ class GenICam:
                     )
                 )
         except Exception as e:
-            self.logger.error(cs(self.logPrefix + str(e), "Maroon"))
+            self.logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
 
     def trigger(self, log=True):
         """Make the camera take a picture"""

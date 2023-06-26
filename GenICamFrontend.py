@@ -8,15 +8,9 @@ import eventlet
 import numpy as np
 from flask import (
     Flask,
-    Response,
-    flash,
-    redirect,
-    render_template,
-    request,
-    send_file,
-    url_for,
+    render_template
 )
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from PIL import Image, ImageDraw, ImageFont
 from stringcolor import *
 
@@ -35,26 +29,30 @@ with open("config.json") as config_file:
 def Test(data):
     runStream = False
     # sleep(config["refresh_delay"])
-    GCH.logger.info(cs(str(data), "Yellow"))
-    GCH.changeDevice(data[0])
-    if data[1] == "exposure":
-        GCH.activeDevice.exposure = int(data[2])
-    if data[1] == "gain":
-        GCH.activeDevice.gain = float(data[2])
-    if data[1] == "pixelformat":
-        GCH.activeDevice.ImageAcquirer.stop_acquisition()  # might remove
-        GCH.activeDevice.PixelFormat = str(data[2])
-        GCH.activeDevice.ImageAcquirer.start_acquisition()  # might remove
-    if data[1] == "whitebalance":
-        GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = (
-            str(data[2])
-        )
-    if data[1] == "width":
-        scales[data[0]][0] = int(data[2])
-    if data[1] == "height":
-        scales[data[0]][1] = int(data[2])
-    runStream = True
-    GCH.logger.info(cs(f"Changes to {GCH.activeDeviceId} applied"))
+    try:
+        GCH.logger.info(cs(str(data), "Yellow"))
+        GCH.change_Device(data[0])
+        if data[1] == "exposure":
+            GCH.activeDevice.exposure = int(data[2])
+        if data[1] == "gain":
+            GCH.activeDevice.gain = float(data[2])
+        if data[1] == "pixelformat":
+            GCH.activeDevice.ImageAcquirer.stop_acquisition()  # might remove
+            GCH.activeDevice.PixelFormat = str(data[2])
+            GCH.activeDevice.ImageAcquirer.start_acquisition()  # might remove
+        if data[1] == "whitebalance":
+            GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = (
+                str(data[2])
+            )
+        if data[1] == "width":
+            scales[data[0]][0] = int(data[2])
+        if data[1] == "height":
+            scales[data[0]][1] = int(data[2])
+        runStream = True
+        GCH.logger.info(cs(f"Changes to {GCH.activeDeviceId} applied","Teal"))
+    except Exception as e:
+        GCH.logger.exception(cs(str(e),"Red"),stack_info=True)
+
 
 
 @app.before_first_request
@@ -133,7 +131,7 @@ def genCamOutputs():
 
             for id in list(GCH.deviceDict.keys()):
                 if id != GCH.activeDeviceId:
-                    GCH.changeDevice(id,log = logEventlet)
+                    GCH.change_Device(id,log = logEventlet)
                 try:
                     GCH.activeDevice.trigger(log=logEventlet)
                     image_data = GCH.activeDevice.grab(log=logEventlet)
@@ -173,7 +171,8 @@ def genCamOutputs():
                     if logEventlet:
                         GCH.logger.info(cs(f"Data for Device {id} send","Teal"))
                 except Exception as e:
-                    GCH.logger.error(cs(str(e), "Maroon"))
+                    GCH.logger.exception(str(e),stack_info=True)
+                    #GCH.logger.error(cs(str(e), "Maroon"))
 
                     eventlet.sleep(0.1)
 
