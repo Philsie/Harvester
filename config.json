@@ -11,5 +11,8 @@
     "logSignOfLife": 10,
 
     "comment-port": "The port the frontend will be running on",
-    "port": "5050"
+    "port": "5050",
+
+    "comment-colorstring": "Use the package colorstring True/False",
+    "colorstring": "False"
 }
