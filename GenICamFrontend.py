@@ -3,6 +3,7 @@ import io
 import json
 from datetime import datetime as dt
 from time import sleep
+import logging
 
 import eventlet
 import numpy as np
@@ -21,6 +22,8 @@ runStream = True
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode="eventlet")
 
+logger = logging.getLogger(__name__)
+
 with open("config.json") as config_file:
     config = json.load(config_file)
 
@@ -30,7 +33,7 @@ def Test(data):
     runStream = False
     # sleep(config["refresh_delay"])
     try:
-        GCH.logger.info(cs(str(data), "Yellow"))
+        logger.info(cs(str(data), "Yellow"))
         GCH.change_Device(data[0])
         if data[1] == "exposure":
             GCH.activeDevice.exposure = int(data[2])
@@ -49,10 +52,9 @@ def Test(data):
         if data[1] == "height":
             scales[data[0]][1] = int(data[2])
         runStream = True
-        GCH.logger.info(cs(f"Changes to {GCH.activeDeviceId} applied","Teal"))
+        logger.info(cs(f"Changes to {GCH.activeDeviceId} applied","Teal"))
     except Exception as e:
-        GCH.logger.exception(cs(str(e),"Red"),stack_info=True)
-
+        logger.exception(cs(str(e),"Red"),stack_info=True)
 
 
 @app.before_first_request
@@ -60,11 +62,11 @@ def before_first_request():
     """code run before loading Main page"""
     global GCH
     GCH = GenICamHub.GenICamHub()
-    GCH.logger.info("")
-    GCH.logger.info(cs("-" * 100, "Green"))
-    GCH.logger.info(cs(f"Start of Log - {dt.now()} - Frontend", "Green"))
+    logger.info("")
+    logger.info(cs("-" * 100, "Green"))
+    logger.info(cs(f"Start of Log - {dt.now()} - Frontend", "Green"))
 
-    GCH.logger.info(cs("Start: before_first_request", "Olive"))
+    logger.info(cs("Start: before_first_request", "Olive"))
 
     global scales
     scales = {}
@@ -74,9 +76,9 @@ def before_first_request():
 
     eventlet.spawn(genCamOutputs)
 
-    GCH.logger.info(cs("Eventlets spawned", "Olive"))
+    logger.info(cs("Eventlets spawned", "Olive"))
 
-    GCH.logger.info(cs("END: before_first_request", "Olive"))
+    logger.info(cs("END: before_first_request", "Olive"))
 
 
 @app.route("/")
@@ -122,12 +124,12 @@ def genCamOutputs():
         if config["logSignOfLife"] != 0 and (dt.now() - time).seconds > config["logSignOfLife"]:
             runningTime = dt.now() - firstRun
             
-            GCH.logger.info(cs(f"GenICamFrontend is running for {runningTime}","Thistle"))
+            logger.info(cs(f"GenICamFrontend is running for {runningTime}","Thistle"))
             time = dt.now()
         if runStream is True:
             if logEventlet:
-                GCH.logger.info("")
-                GCH.logger.info(cs("Generating active device Output", "Aqua"))
+                logger.info("")
+                logger.info(cs("Generating active device Output", "Aqua"))
 
             for id in list(GCH.deviceDict.keys()):
                 if id != GCH.activeDeviceId:
@@ -169,10 +171,10 @@ def genCamOutputs():
                     )
 
                     if logEventlet:
-                        GCH.logger.info(cs(f"Data for Device {id} send","Teal"))
+                        logger.info(cs(f"Data for Device {id} send","Teal"))
                 except Exception as e:
-                    GCH.logger.exception(str(e),stack_info=True)
-                    #GCH.logger.error(cs(str(e), "Maroon"))
+                    logger.exception(str(e),stack_info=True)
+                    #logger.error(cs(str(e), "Maroon"))
 
                     eventlet.sleep(0.1)
 

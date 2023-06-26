@@ -9,12 +9,16 @@ from harvesters.core import ImageAcquirer
 from PIL import Image
 from stringcolor import *
 
+logger = logging.getLogger(__name__)
 
 class GenICam:
     """ """
 
+    #def __init__(
+    #    self, logger: logging.Logger, ImageAcquirer: ImageAcquirer, id: str
+    #) -> None:
     def __init__(
-        self, logger: logging.Logger, ImageAcquirer: ImageAcquirer, id: str
+        self, ImageAcquirer: ImageAcquirer, id: str
     ) -> None:
         """ """
         self.id = id
@@ -24,11 +28,10 @@ class GenICam:
 
         self.supported_PixelFormats = ["BGR8", "Mono8"]
 
-        self.logger = logger
-
-        self.logger.info("")
-        self.logger.info(cs("-" * 100, "Green"))
-        self.logger.info(
+        
+        logger.info("")
+        logger.info(cs("-" * 100, "Green"))
+        logger.info(
             cs(f"{self.logPrefix}Start of Log - {dt.now()} - {id}", "Green")
         )
 
@@ -59,11 +62,11 @@ class GenICam:
         if e > 0 and isinstance(e, int):
             try:
                 self.ImageAcquirer.remote_device.node_map.ExposureTime.value = e
-                self.logger.info(cs(f"{self.logPrefix} Exposure set to {e}", "Teal"))
+                logger.info(cs(f"{self.logPrefix} Exposure set to {e}", "Teal"))
             except Exception as ex:
-                self.logger.exception(cs(self.logPrefix + str(ex), "Maroon"),stack_info=True)
+                logger.exception(cs(self.logPrefix + str(ex), "Maroon"),stack_info=True)
         else:
-            self.logger.warning(
+            logger.warning(
                 cs(
                     f"{self.logPrefix} Invalid input for exposure.setter: {e}, {type(e)}"
                 ),
@@ -79,9 +82,9 @@ class GenICam:
     def gain(self, g):
         if g >= 0.0 and type(g) == float:
             self.ImageAcquirer.remote_device.node_map.Gain.value = g
-            self.logger.info(cs(f"{self.logPrefix} Gain set to {g}", "Teal"))
+            logger.info(cs(f"{self.logPrefix} Gain set to {g}", "Teal"))
         else:
-            self.logger.warning(
+            logger.warning(
                 cs(
                     f"{self.logPrefix} Invalid input for gain.setter: {g}, {type(g)}",
                     "Orange",
@@ -101,18 +104,18 @@ class GenICam:
                 self.ImageAcquirer.remote_device.node_map.PixelFormat.symbolics,
             ):
                 self.ImageAcquirer.remote_device.node_map.PixelFormat.value = pf
-                self.logger.info(
+                logger.info(
                     cs(f"{self.logPrefix} Pixelformat set to {pf}", "Teal")
                 )
             else:
-                self.logger.warning(
+                logger.warning(
                     cs(
                         f"{self.logPrefix} Invalid input for PixelFormat.setter: {pf}, {type(pf)}",
                         "Orange",
                     )
                 )
         except Exception as e:
-            self.logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
+            logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
 
     @property
     def Whitebalance(self):
@@ -124,29 +127,29 @@ class GenICam:
         try:
             if isinstance(wb, str) and wb in self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.symbolics:
                 self.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = wb
-                self.logger.info(
+                logger.info(
                     cs(f"{self.logPrefix} Whitebalance set to {wb}", "Teal")
                 )
             else:
-                self.logger.warning(
+                logger.warning(
                     cs(
                         f"{self.logPrefix} Invalid input for Whitebalance.setter: {wb}, {type(wb)}",
                         "Orange",
                     )
                 )
         except Exception as e:
-            self.logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
+            logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
 
     def trigger(self, log=True):
         """Make the camera take a picture"""
         if log:
-            self.logger.info(cs(f"{self.logPrefix} Triggered", "Aqua"))
+            logger.info(cs(f"{self.logPrefix} Triggered", "Aqua"))
         self.ImageAcquirer.remote_device.node_map.TriggerSoftware.execute()
 
     def grab(self, save=False, log=True):
         """Return the image taken as a list of pixel Values"""
         if log:
-            self.logger.info(cs(f"{self.logPrefix} Grabed", "Aqua"))
+            logger.info(cs(f"{self.logPrefix} Grabed", "Aqua"))
         # self.ImageAcquirer.start_image_acquisition()
         with self.ImageAcquirer.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
@@ -160,7 +163,7 @@ class GenICam:
             
         if save:
             if log:
-                self.logger.info(cs(f"{self.logPrefix} Saved during grabbing", "Aqua"))
+                logger.info(cs(f"{self.logPrefix} Saved during grabbing", "Aqua"))
             img = Image.fromarray(image_data)
             img.save(f"./images/{self.id}-Image.png")
 
