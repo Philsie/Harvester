@@ -69,17 +69,17 @@ def Test(data):
             GCH.activeDevice.PixelFormat = str(data[2])
             GCH.activeDevice.ImageAcquirer.start_acquisition()  # might remove
         if data[1] == "whitebalance":
-            GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = (
-                str(data[2])
+            GCH.activeDevice.ImageAcquirer.remote_device.node_map.BalanceWhiteAuto.value = str(
+                data[2]
             )
         if data[1] == "width":
             scales[data[0]][0] = int(data[2])
         if data[1] == "height":
             scales[data[0]][1] = int(data[2])
         runStream = True
-        logger.info(cs(f"Changes to {GCH.activeDeviceId} applied","Teal"))
+        logger.info(cs(f"Changes to {GCH.activeDeviceId} applied", "Teal"))
     except Exception as e:
-        logger.exception(cs(str(e),"Red"),stack_info=True)
+        logger.exception(cs(str(e), "Red"), stack_info=True)
 
 
 @app.before_first_request
@@ -161,10 +161,13 @@ def genCamOutputs():
     logEventlet = True if config["logEventlet"].upper() == "TRUE" else False
 
     while True:
-        if config["logSignOfLife"] != 0 and (dt.now() - time).seconds > config["logSignOfLife"]:
+        if (
+            config["logSignOfLife"] != 0
+            and (dt.now() - time).seconds > config["logSignOfLife"]
+        ):
             runningTime = dt.now() - firstRun
-            
-            logger.info(cs(f"GenICamFrontend is running for {runningTime}","Thistle"))
+
+            logger.info(cs(f"GenICamFrontend is running for {runningTime}", "Thistle"))
             time = dt.now()
         if runStream is True:
             if logEventlet:
@@ -173,7 +176,7 @@ def genCamOutputs():
 
             for id in list(GCH.deviceDict.keys()):
                 if id != GCH.activeDeviceId:
-                    GCH.change_Device(id,log = logEventlet)
+                    GCH.change_Device(id, log=logEventlet)
                 try:
                     GCH.activeDevice.trigger(log=logEventlet)
                     image_data = GCH.activeDevice.grab(log=logEventlet)
@@ -211,10 +214,10 @@ def genCamOutputs():
                     )
 
                     if logEventlet:
-                        logger.info(cs(f"Data for Device {id} send","Teal"))
+                        logger.info(cs(f"Data for Device {id} send", "Teal"))
                 except Exception as e:
-                    logger.exception(str(e),stack_info=True)
-                    #logger.error(cs(str(e), "Maroon"))
+                    logger.exception(str(e), stack_info=True)
+                    # logger.error(cs(str(e), "Maroon"))
 
                     eventlet.sleep(0.1)
 

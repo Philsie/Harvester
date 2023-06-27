@@ -32,20 +32,23 @@ with open("config.json") as config_file:
 
 fallBackColorstring = False
 if config["colorstring"].upper() == "TRUE":
-    try: 
+    try:
         from stringcolor import *
     except Exception as e:
         fallBackColorstring = True
-        logger.exception(cs(str(e),"Red"),stack_info=True)
-else: fallBackColorstring = True
+        logger.exception(cs(str(e), "Red"), stack_info=True)
+else:
+    fallBackColorstring = True
 
 if fallBackColorstring:
     logger.info(f"Using fallback for colorstring in {__file__}")
-    def cs(text,color):
+
+    def cs(text, color):
         return str(text)
 
 
 #%% GenICamHub
+
 
 class GenICamHub:
     """
@@ -121,11 +124,9 @@ class GenICamHub:
                 )
                 logger.info(cs(f"Device stated: {id}", "Teal"))
             except Exception as e:
-                    logger.exception(cs(str(e),"Orange"),stack_info=True)
-            
+                logger.exception(cs(str(e), "Orange"), stack_info=True)
 
         self.list_Running_Devices()
-
 
         if len(self.deviceDict) > 0:
             self.activeDevice = list(self.deviceDict.values())[0]
@@ -149,7 +150,7 @@ class GenICamHub:
         else:
             logger.info(cs("No devices found", "Teal"))
 
-    def change_Device(self, id: str, log = True):
+    def change_Device(self, id: str, log=True):
         """changes the currently active GenICam object
 
         Args:
@@ -181,8 +182,7 @@ class GenICamHub:
         """
         logger.info(cs(f"exporting {id}", "Teal"))
         try:
-            self.change_Device(id)  
+            self.change_Device(id)
             return self.activeDevice
         except Exception as e:
-            logger.exception(cs(str(e),"Orange"),stack_info=True)
-
+            logger.exception(cs(str(e), "Orange"), stack_info=True)

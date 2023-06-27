@@ -37,15 +37,14 @@ with open("config.json") as config_file:
         def cs(text, color):
             return str(text)
 
+
 #%% GenICam
 class GenICam:
     """
     The GenICam class is an extension to the Harvesters ImageAcquirer
     """
 
-    def __init__(
-        self, ImageAcquirer: ImageAcquirer, id: str
-    ) -> None:
+    def __init__(self, ImageAcquirer: ImageAcquirer, id: str) -> None:
         """
         Creates the GenICam object
 
@@ -73,12 +72,9 @@ class GenICam:
         self.nodeMap = self.ImageAcquirer.remote_device.node_map
         self.supported_PixelFormats = ["BGR8", "Mono8"]
 
-        
         logger.info("")
         logger.info(cs("-" * 100, "Green"))
-        logger.info(
-            cs(f"{self.logPrefix}Start of Log - {dt.now()} - {id}", "Green")
-        )
+        logger.info(cs(f"{self.logPrefix}Start of Log - {dt.now()} - {id}", "Green"))
         if fallBackColorstring:
             logger.info(f"{self.logPrefix}Using fallback for colorstring in {__file__}")
 
@@ -111,7 +107,9 @@ class GenICam:
                 self.nodeMap.ExposureTime.value = e
                 logger.info(cs(f"{self.logPrefix} Exposure set to {e}", "Teal"))
             except Exception as ex:
-                logger.exception(cs(self.logPrefix + str(ex), "Maroon"),stack_info=True)
+                logger.exception(
+                    cs(self.logPrefix + str(ex), "Maroon"), stack_info=True
+                )
         else:
             logger.warning(
                 cs(
@@ -151,9 +149,7 @@ class GenICam:
                 self.nodeMap.PixelFormat.symbolics,
             ):
                 self.nodeMap.PixelFormat.value = pf
-                logger.info(
-                    cs(f"{self.logPrefix} Pixelformat set to {pf}", "Teal")
-                )
+                logger.info(cs(f"{self.logPrefix} Pixelformat set to {pf}", "Teal"))
             else:
                 logger.warning(
                     cs(
@@ -162,7 +158,7 @@ class GenICam:
                     )
                 )
         except Exception as e:
-            logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
+            logger.exception(cs(self.logPrefix + str(e), "Maroon"), stack_info=True)
 
     @property
     def Whitebalance(self):
@@ -174,9 +170,7 @@ class GenICam:
         try:
             if isinstance(wb, str) and wb in self.nodeMap.BalanceWhiteAuto.symbolics:
                 self.nodeMap.BalanceWhiteAuto.value = wb
-                logger.info(
-                    cs(f"{self.logPrefix} Whitebalance set to {wb}", "Teal")
-                )
+                logger.info(cs(f"{self.logPrefix} Whitebalance set to {wb}", "Teal"))
             else:
                 logger.warning(
                     cs(
@@ -185,9 +179,9 @@ class GenICam:
                     )
                 )
         except Exception as e:
-            logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
+            logger.exception(cs(self.logPrefix + str(e), "Maroon"), stack_info=True)
 
-    def trigger(self, log=True):
+    def trigger(self, log:bool=True):
         """Executes a SoftwareTrigger on the GenICam
 
         Allowes for grabbing the imagedata at any later point
@@ -201,7 +195,7 @@ class GenICam:
             logger.info(cs(f"{self.logPrefix} Triggered", "Aqua"))
         self.nodeMap.TriggerSoftware.execute()
 
-    def grab(self, save=False, log=True):
+    def grab(self, save:bool=False, log:bool=True):
         """Read the GenICam buffer
 
         Reads the content of the Buffer and converts it into a usable form.
@@ -219,17 +213,20 @@ class GenICam:
         """
         if log:
             logger.info(cs(f"{self.logPrefix} Grabed", "Aqua"))
-        # self.ImageAcquirer.start_image_acquisition()
         with self.ImageAcquirer.fetch_buffer() as buffer:
             component = buffer.payload.components[0]
             component_data = component.data
             if self.PixelFormat == "BGR8":
-                image_data = copy.copy(component_data.reshape(component.height, component.width, 3)[
-                    :, :, ::-1
-                ])
+                image_data = copy.copy(
+                    component_data.reshape(component.height, component.width, 3)[
+                        :, :, ::-1
+                    ]
+                )
             else:
-                image_data = copy.copy(component_data.reshape(component.height, component.width))
-            
+                image_data = copy.copy(
+                    component_data.reshape(component.height, component.width)
+                )
+
         if save:
             if log:
                 logger.info(cs(f"{self.logPrefix} Saved during grabbing", "Aqua"))
@@ -237,4 +234,3 @@ class GenICam:
             img.save(f"./images/{self.id}-Image.png")
 
         return image_data
-
