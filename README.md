@@ -5,23 +5,8 @@ To get an overview of the Code strukture take a look at the GenICam.dio file:
     To open it either use the vscode extension Draaw.io or their Website [Draw.io](https://app.diagrams.net/)
 
 # Setup  
-## Packages needed:
 
-    Pillow==8.4.0  
-    harvesters==1.3.2  
-    numpy==1.19.5  
-    python-json-logger==2.0.7  
-    datetime==4.9  
-    flask==2.0.3  
-    flask_socketio==5.3.4  
-    eventlet==0.33.3  
-
-### optional (installed by setup.py):
-    string-color==1.2.3
-
-
-
-## Installation
+## Package Installation
 install the needed packages into a venv running python 3.6  
 > bash setup.py
 
