@@ -51,6 +51,8 @@ class GenICamHub:
 
         logger.info(".\n" * 25)
         logger.info(cs(f"Start of Log - {dt.now()} - Hub", "Green"))
+        if fallBackColorstring:
+            logger.info(f"Using fallback for colorstring in {__file__}")
 
         self.ctiFiles = []
 

@@ -4,31 +4,36 @@
 To get an overview of the Code strukture take a look at the GenICam.dio file:  
     To open it either use the vscode extension Draaw.io or their Website [Draw.io](https://app.diagrams.net/)
 
+# Setup  
 ## Packages needed:
 
-Pillow==8.4.0
-harvesters==1.3.2
-numpy==1.19.5
-python-json-logger==2.0.7
-datetime==4.9
-flask==2.0.3
-flask_socketio==5.3.4
-eventlet==0.33.3
-string-color==1.2.3
+    Pillow==8.4.0  
+    harvesters==1.3.2  
+    numpy==1.19.5  
+    python-json-logger==2.0.7  
+    datetime==4.9  
+    flask==2.0.3  
+    flask_socketio==5.3.4  
+    eventlet==0.33.3  
 
-* Including their dependencies
-* install these into a .venv directory
-    > bash setup.py
+### optional (installed by setup.py):
+    string-color==1.2.3
 
 
-## .Cti
 
-Place all .cti file into the cti folder or create a symlink with the ending .sym  
-    > ln -s /path/to/target /path/to/symlink.sym
+## Installation
+install the needed packages into a venv running python 3.6  
+> bash setup.py
 
 ## Camera Setup:
 
-# Ximea  
+# location for .cti files:
+
+Place all .cti file into the cti folder or create a symlink with the ending .sym  
+> ln -s /path/to/target /path/to/symlink.sym
+
+
+# Ximea:
 
 1. Ensure cti file or symlink is placed in ./cti directory
 
@@ -60,12 +65,19 @@ Place all .cti file into the cti folder or create a symlink with the ending .sym
 
 * to deactivate certain .cti files move them or their symlink into the ./cti/inactive directory.
 
-* further configurations (Frontend only) can be done inside the config.json file.   
-Note: Dont change fields with a key starting with 'comment-' these are used as descriptions only.
+* further configurations can be done inside the config.json file.
+    *   Refrash rate of camera feed on frontend
+    *   Logging of eventlet loop content
+    *   Logging of a sign of live
+    *   local port used for frontend
+    *   Use of color-string library    
+    <br>
+    
+    Note: Dont change fields with a key starting with 'comment-' these are used as descriptions only.
 
 # Usage
 
-## Frontend
+## Frontend:
 
 1.  While in the main folder use this command to start the frontend
 > .venv/bin/python GenICamFrontend.py  
@@ -74,6 +86,43 @@ Note: Dont change fields with a key starting with 'comment-' these are used as d
 > tail -f logs/GenICam.log
 
 3. Start the execution by loading the website
+
+## Hub:
+
+1. import the GenICamHub.py file into your project  
+2. create an GenICamHub object
+
+### Managed by Hub
+3. get a list of all running devices  
+    > GenICamHub.list_Running_Devices
+4. set the wanted Device as active using its id
+    > GenICamHub.change_Device(id)
+5. change Device settings by accessing GenICamHub.activeDevice  
+    * example:
+    > GenICamHub.activeDevice.exposure = Int
+6. Trigger an Image
+    > GenICamHub.activeDevice.trigger()
+7. Read the Image
+    * save creates an image file inside the images directory
+    > GenICamHub.activeDevice.grab(save=Bool)
+
+### Managed by your code
+
+3. get a list of all running devices  
+    > GenICamHub.list_Running_Devices
+4. export the wanted device using its id   
+    * this returnes a GenICam object
+    > GenICamHub.export_Device(id)
+5. change Device settings by accessing the GenICam Object
+    * example:
+    > GenICam.exposure = Int
+6. Trigger an Image
+    > GenICam.trigger()
+7. Read the Image  
+    * save creates an image file inside the images directory  
+    * this returns an array of pixel values
+    > GenICamHub.activeDevice.grab(save=Bool)
+
 
 
 # known issues:

@@ -34,7 +34,6 @@ if config["colorstring"].upper() == True:
 else: fallBackColorstring = True
 
 if fallBackColorstring:
-    logger.info(f"Using fallback for colorstring in {__file__}")
     def cs(text,color):
         return str(text)
 
@@ -78,6 +77,8 @@ def before_first_request():
     logger.info("")
     logger.info(cs("-" * 100, "Green"))
     logger.info(cs(f"Start of Log - {dt.now()} - Frontend", "Green"))
+    if fallBackColorstring:
+        logger.info(f"Using fallback for colorstring in {__file__}")
 
     logger.info(cs("Start: before_first_request", "Olive"))
 
