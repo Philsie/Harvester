@@ -25,7 +25,7 @@ with open("config.json") as config_file:
     config = json.load(config_file)
 
 fallBackColorstring = False
-if config["colorstring"].upper() == True:
+if config["colorstring"].upper() == "TRUE":
     try: 
         from stringcolor import *
     except Exception as e:

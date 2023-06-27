@@ -1,3 +1,10 @@
+"""
+The GenICam module is desigened as a wrapper for the Harvesters ImageAcquirer Object
+
+Improving usability by adding error handling and implementing basic configurations as properties
+Also adding simplified functions for taking an image and returning it.
+"""
+#%% Libraries
 import copy
 import json
 import logging
@@ -8,38 +15,62 @@ import numpy as np
 from harvesters.core import ImageAcquirer
 from PIL import Image
 
+#%% Logger and Config
 logger = logging.getLogger(__name__)
 
 with open("config.json") as config_file:
     config = json.load(config_file)
 
-fallBackColorstring = False
-if config["colorstring"].upper() == True:
-    try: 
-        from stringcolor import *
-    except Exception as e:
+    #%% Fallback for color-string
+    fallBackColorstring = False
+    if config["colorstring"].upper() == "TRUE":
+        try:
+            from stringcolor import *
+        except Exception as e:
+            fallBackColorstring = True
+            logger.exception(cs(str(e), "Red"), stack_info=True)
+    else:
         fallBackColorstring = True
-        logger.exception(cs(str(e),"Red"),stack_info=True)
-else: fallBackColorstring = True
 
-if fallBackColorstring:
-    def cs(text,color):
-        return str(text)
+    if fallBackColorstring:
 
+        def cs(text, color):
+            return str(text)
+
+#%% GenICam
 class GenICam:
-    """ """
+    """
+    The GenICam class is an extension to the Harvesters ImageAcquirer
+    """
 
     def __init__(
         self, ImageAcquirer: ImageAcquirer, id: str
     ) -> None:
-        """ """
+        """
+        Creates the GenICam object
+
+        Args:
+            ImageAcquirer (ImageAcquirer):
+                provides an interface with the camera device used
+            id (str):
+                identifier used to adress the camera
+
+        Fields:
+            self.id(str):
+                stores the id passed during creation
+            self.logPrefix(str):
+                prefix added during logging to identifiy the GenICam object logging
+            self.ImageAcquirer(ImageAcquirer):
+                stores the ImageAcquirer passed during creation
+            self.nodeMap(node_map):
+                shortcut to the ImageAcquirers node_map
+            self.supported_PixelFormats(list<str>):
+                List of Pixelformats supported, used to limit setting of values
+        """
         self.id = id
         self.logPrefix = "\t" + self.id + " -"
-
         self.ImageAcquirer = ImageAcquirer
-
         self.nodeMap = self.ImageAcquirer.remote_device.node_map
-
         self.supported_PixelFormats = ["BGR8", "Mono8"]
 
         
@@ -54,7 +85,7 @@ class GenICam:
         self.baseConfig()
 
     def baseConfig(self):
-        # configure ImageAcquirer based to default values
+        """Handles basic configuration of the GenICam"""
         self.nodeMap.BalanceWhiteAuto.value = "Off"
 
         self.exposure = 1500
@@ -70,7 +101,7 @@ class GenICam:
 
     @property
     def exposure(self):
-        """set/get exposure of image taken"""
+        """GenICam property used to set/get ExposureTime"""
         return self.nodeMap.ExposureTime.value
 
     @exposure.setter
@@ -91,7 +122,7 @@ class GenICam:
 
     @property
     def gain(self):
-        """set/get gain of image taken"""
+        """GenICam property used to set/get Gain"""
         return self.nodeMap.Gain.value
 
     @gain.setter
@@ -109,7 +140,7 @@ class GenICam:
 
     @property
     def PixelFormat(self):
-        """set/get PixelFormat of image taken"""
+        """GenICam property used to set/get PixelFormat"""
         return self.nodeMap.PixelFormat.value
 
     @PixelFormat.setter
@@ -135,7 +166,7 @@ class GenICam:
 
     @property
     def Whitebalance(self):
-        """set/get Whitebalance of image taken"""
+        """GenICam property used to set/get BalanceWhiteAuto"""
         return self.nodeMap.BalanceWhiteAuto.value
 
     @Whitebalance.setter
@@ -157,13 +188,35 @@ class GenICam:
             logger.exception(cs(self.logPrefix + str(e), "Maroon"),stack_info=True)
 
     def trigger(self, log=True):
-        """Make the camera take a picture"""
+        """Executes a SoftwareTrigger on the GenICam
+
+        Allowes for grabbing the imagedata at any later point
+
+        Args:
+            log (bool, optional):
+                Log information during execution.
+                    * Defaults to True.
+        """
         if log:
             logger.info(cs(f"{self.logPrefix} Triggered", "Aqua"))
         self.nodeMap.TriggerSoftware.execute()
 
     def grab(self, save=False, log=True):
-        """Return the image taken as a list of pixel Values"""
+        """Read the GenICam buffer
+
+        Reads the content of the Buffer and converts it into a usable form.
+
+        Args:
+            save (bool, optional):
+                saves the image contained inside the buffer into a file.
+                    * Defaults to False.
+            log (bool, optional):
+                Log information during execution.
+                    * Defaults to True.
+
+        Returns:
+            list<list<int>>: list of Int based PixelValues as an 2D-Array
+        """
         if log:
             logger.info(cs(f"{self.logPrefix} Grabed", "Aqua"))
         # self.ImageAcquirer.start_image_acquisition()

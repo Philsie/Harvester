@@ -1,14 +1,18 @@
+"""
+The GenICamHub is used to handle creation and basic usage of all connected GenICam devices.
+"""
+#%% Libraries
 import copy
+import json
 import logging
 import os
 from datetime import datetime as dt
-import json
 
 from harvesters.core import Harvester
 
-
 from GenICam import GenICam
 
+#%% Logging and Config
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s]: %(filename)s: "
@@ -24,8 +28,10 @@ logging.basicConfig(
 with open("config.json") as config_file:
     config = json.load(config_file)
 
+#%% Fallback for color-string
+
 fallBackColorstring = False
-if config["colorstring"].upper() == True:
+if config["colorstring"].upper() == "TRUE":
     try: 
         from stringcolor import *
     except Exception as e:
@@ -38,12 +44,32 @@ if fallBackColorstring:
     def cs(text,color):
         return str(text)
 
+
+#%% GenICamHub
+
 class GenICamHub:
     """
-
+    The GenICamHub creates and manages GenICam objects
     """
 
     def __init__(self) -> None:
+        """
+        Creates the GenICamHub object
+
+        Fields:
+            self.deviceDict(dict<str:GenICam>):
+                matches every GenICam object to an id for ease of access
+            self.activeDevice(GenICam):
+                Currently selected GenICam when using GenICamHub to manage them
+            self.activeDeviceId(str):
+                id of currently active GenICam when using GenICamHub to manage them
+            self.ctiFiles(list<str>):
+                list of all cti files loaded accounting for loadorder
+            self.Harvester(Harvester):
+                Harvester object used for creation of GenICam objects
+            self.deviceList:
+                shortcut to the Harvester device_info_list
+        """
 
         self.deviceDict = {}
         self.activeDevice = None
@@ -100,6 +126,7 @@ class GenICamHub:
 
         self.list_Running_Devices()
 
+
         if len(self.deviceDict) > 0:
             self.activeDevice = list(self.deviceDict.values())[0]
             self.activeDeviceId = list(self.deviceDict.keys())[0]
@@ -108,6 +135,11 @@ class GenICamHub:
             exit()
 
     def list_Running_Devices(self):
+        """creates a list of all running GenICam objects
+
+        Returns:
+            list<GenICam>: list of all GenICam objects
+        """
         if len(self.deviceDict) > 0:
             logger.info(cs(f"{len(self.deviceDict)} devices running", "Teal"))
 
@@ -118,6 +150,13 @@ class GenICamHub:
             logger.info(cs("No devices found", "Teal"))
 
     def change_Device(self, id: str, log = True):
+        """changes the currently active GenICam object
+
+        Args:
+            id (str): id of GenICam object set as active
+            log (bool, optional): log the change in active GenICam.
+                * Defaults to True
+        """
         if log:
             logger.info(
                 cs(f"changing active device from {self.activeDeviceId} to {id}", "Teal")
@@ -131,7 +170,15 @@ class GenICamHub:
         else:
             logger.warning(cs(f"No device with ID: {id} found", "Orange"))
 
-    def export_Device(self,id:str):
+    def export_Device(self, id: str):
+        """exports a GenICam for use outside of GenICamHub
+
+        Args:
+            id (str): id of GenICam object exported
+
+        Returns:
+            GenICam: GenICam object
+        """
         logger.info(cs(f"exporting {id}", "Teal"))
         try:
             self.change_Device(id)  
@@ -139,8 +186,3 @@ class GenICamHub:
         except Exception as e:
             logger.exception(cs(str(e),"Orange"),stack_info=True)
 
-
-if __name__ == "__main__":
-    GCH = GenICamHub()
-    GCH.activeDevice.trigger()
-    GCH.activeDevice.grab(save=True)
