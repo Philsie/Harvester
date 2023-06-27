@@ -23,7 +23,6 @@ if config["colorstring"].upper() == True:
 else: fallBackColorstring = True
 
 if fallBackColorstring:
-    logger.info(f"Using fallback for colorstring in {__file__}")
     def cs(text,color):
         return str(text)
 
@@ -49,6 +48,8 @@ class GenICam:
         logger.info(
             cs(f"{self.logPrefix}Start of Log - {dt.now()} - {id}", "Green")
         )
+        if fallBackColorstring:
+            logger.info(f"{self.logPrefix}Using fallback for colorstring in {__file__}")
 
         self.baseConfig()
 
