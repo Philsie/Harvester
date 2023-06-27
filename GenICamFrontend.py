@@ -1,3 +1,7 @@
+"""
+Frontend used to test GenICamHub
+"""
+#%% Libraries
 import base64
 import io
 import json
@@ -14,6 +18,8 @@ from stringcolor import *
 
 import GenICamHub
 
+#%% Logging and Config
+
 runStream = True
 
 app = Flask(__name__)
@@ -24,26 +30,33 @@ logger = logging.getLogger(__name__)
 with open("config.json") as config_file:
     config = json.load(config_file)
 
-fallBackColorstring = False
-if config["colorstring"].upper() == "TRUE":
-    try: 
-        from stringcolor import *
-    except Exception as e:
+    #%% Fallback for color-string
+
+    fallBackColorstring = False
+    if config["colorstring"].upper() == "TRUE":
+        try:
+            from stringcolor import *
+        except Exception as e:
+            fallBackColorstring = True
+            logger.exception(cs(str(e), "Red"), stack_info=True)
+    else:
         fallBackColorstring = True
-        logger.exception(cs(str(e),"Red"),stack_info=True)
-else: fallBackColorstring = True
 
-if fallBackColorstring:
-    def cs(text,color):
-        return str(text)
+    if fallBackColorstring:
 
-
+        def cs(text, color):
+            return str(text)
 
 
 @socketio.on("cam_config")
 def Test(data):
+    """Responds to Socket messages from Website
+
+    Args:
+        data (tupel<string>): setting passed to GenICam object
+    """
     runStream = False
-    # sleep(config["refresh_delay"])
+
     try:
         logger.info(cs(str(data), "Yellow"))
         GCH.change_Device(data[0])
@@ -71,7 +84,7 @@ def Test(data):
 
 @app.before_first_request
 def before_first_request():
-    """code run before loading Main page"""
+    """Code required before loading the Website for the first time"""
     global GCH
     GCH = GenICamHub.GenICamHub()
     logger.info("")
@@ -97,8 +110,13 @@ def before_first_request():
 
 @app.route("/")
 def index():
-    """main page displayed"""
+    """Responsible for loading the main page on request
+
+    Returns:
+        render_template(args*) output: renders a template handled further by Flask
+    """
     socketio.emit("Displays", list(GCH.deviceDict.keys()))
+
     # account for WhiteBalance only working in BRG8 mode
     wb = "NONE"
     a_wb = []
@@ -110,7 +128,6 @@ def index():
         "index.html",
         gain=GCH.activeDevice.gain,
         res=list(scales.values())[0],
-        # cur_res=GCH.activeDevice.scale,
         expo=int(GCH.activeDevice.exposure),
         info=f"<p>{GCH.activeDevice.nodeMap.DeviceVendorName.value} - {GCH.activeDeviceId}</p>",
         pixelformat=GCH.activeDevice.PixelFormat,
@@ -126,7 +143,18 @@ def index():
 
 
 def genCamOutputs():
-    """get frame displayable on website from camera"""
+    """
+    Used as an eventlet to handle all information streams from GenICam objects to the Website
+
+    Information sent per GenICam object:
+        video_feed:
+            base64 encoded image taken by the GenICam
+        temp_feed:
+            current reported temperature rounded to one decimal place
+        fps_feed:
+            current reported maximum possible AcquisitionFrameRate
+
+    """
     firstRun = dt.now()
     time = dt.now()
 
@@ -195,6 +223,4 @@ def genCamOutputs():
 
 if __name__ == "__main__":
     """Run Flask application"""
-
-    # run app
     socketio.run(app, host="0.0.0.0", port=int(config["port"]), debug=True)
